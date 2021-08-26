@@ -1,0 +1,5 @@
+<?jelly escape-by-default='true'?>
+<div>
+    Authentication plugin that uses a configurable HTTP header (that should be provided upstream) assumed to be a JWT token.
+    This JWT token can be used as a source for user authentication.
+</div>

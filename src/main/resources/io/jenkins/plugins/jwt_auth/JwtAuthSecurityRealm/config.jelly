@@ -1,0 +1,42 @@
+<!--
+
+-->
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:section title="Global JWT Auth Settings" >
+        <f:entry title="Header name" field="headerName" help="/plugin/jwt-auth/help/params/headername-help.html">
+            <f:textbox default="${descriptor.getDefaultHeaderName()}" />
+        </f:entry>
+
+        <f:entry title="Username claim name" field="userClaimName" help="/plugin/jwt-auth/help/params/headername-help.html">
+            <f:textbox default="${descriptor.getDefaultUsernameClaimName()}" />
+        </f:entry>
+
+        <f:entry title="Groups claim name" field="groupsClaimName" help="/plugin/jwt-auth/help/params/headername-help.html">
+            <f:textbox default="${descriptor.getDefaultGroupsClaimName()}" />
+        </f:entry>
+
+        <f:entry title="Groups claim list separator" field="groupsClaimSeparator" help="/plugin/jwt-auth/help/params/headername-help.html">
+            <f:textbox />
+        </f:entry>
+
+        <!--
+        <f:entry title="GitHub API URI"  field="githubApiUri" help="/plugin/github-oauth/help/realm/github-api-uri-help.html">
+            <f:textbox default="${descriptor.getDefaultGithubApiUri()}" />
+        </f:entry>
+
+
+        <f:entry title="Client ID"  field="clientID" help="/plugin/github-oauth/help/realm/client-id-help.html">
+            <f:textbox />
+        </f:entry>
+
+        <f:entry title="Client Secret" field="clientSecret" help="/plugin/github-oauth/help/realm/client-secret-help.html">
+            <f:password />
+        </f:entry>
+
+        <f:entry title="OAuth Scope(s)" field="oauthScopes" help="/plugin/github-oauth/help/realm/oauth-scopes-help.html">
+            <f:textbox default="${descriptor.getDefaultOauthScopes()}" />
+        </f:entry>
+        -->
+    </f:section>
+</j:jelly>

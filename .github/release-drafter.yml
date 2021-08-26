@@ -1,0 +1,2 @@
+_extends: .github
+tag-template: jwt-auth-$NEXT_MINOR_VERSION
