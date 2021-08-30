@@ -8,27 +8,27 @@
             <f:textbox default="${descriptor.getDefaultHeaderName()}" />
         </f:entry>
 
-        <f:entry title="Username claim name" field="userClaimName" help="/plugin/jwt-auth/help/params/headername-help.html">
+        <f:entry title="Username claim name" field="userClaimName" help="/plugin/jwt-auth/help/params/userclaim-help.html">
             <f:textbox default="${descriptor.getDefaultUsernameClaimName()}" />
         </f:entry>
 
-        <f:entry title="Groups claim name" field="groupsClaimName" help="/plugin/jwt-auth/help/params/headername-help.html">
+        <f:entry title="Groups claim name" field="groupsClaimName" help="/plugin/jwt-auth/help/params/groupclaim-help.html">
             <f:textbox default="${descriptor.getDefaultGroupsClaimName()}" />
         </f:entry>
 
-        <f:entry title="Groups claim list separator" field="groupsClaimSeparator" help="/plugin/jwt-auth/help/params/headername-help.html">
+        <f:entry title="Groups claim list separator" field="groupsClaimSeparator" help="/plugin/jwt-auth/help/params/groupclaimseparator-help.html">
             <f:textbox />
         </f:entry>
 
-        <f:entry title="JWKS JSON URL" field="jwksUrl" help="/plugin/jwt-auth/help/params/headername-help.html">
+        <f:entry title="JWKS JSON URL" field="jwksUrl" help="/plugin/jwt-auth/help/params/jwksjsonurl-help.html">
             <f:textbox />
         </f:entry>
 
-        <f:entry title="Verification leeway in seconds" field="leewaySeconds" help="/plugin/jwt-auth/help/params/headername-help.html">
+        <f:entry title="Verification leeway in seconds" field="leewaySeconds" help="/plugin/jwt-auth/help/params/leeway-help.html">
             <f:number default="1" min="0" />
         </f:entry>
 
-        <f:entry title="Allow verification failures" field="allowVerificationFailures" help="/plugin/jwt-auth/help/params/headername-help.html">
+        <f:entry title="Allow verification failures" field="allowVerificationFailures" help="/plugin/jwt-auth/help/params/allowverificationfailures-help.html">
             <f:checkbox />
         </f:entry>
 

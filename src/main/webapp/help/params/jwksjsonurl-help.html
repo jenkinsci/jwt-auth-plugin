@@ -1,0 +1,17 @@
+<div>
+  An accessible URL to the <code>jwks.json</code> document that should contain all valid signing keys of the upstream system.
+
+  <p>
+    Normally this resides somewhere in the <code>.well-known</code> space but can differ in many ways.<br />
+    Examples are: <code>https://auth-server/.well-known/jwks.json</code>
+  </p>
+
+  <p>
+    Please be aware that if you <strong>don't</strong> provide a JWKS URL, no signature verification will be performed.
+    This is useful for use cases that use JWT but don't sign them.
+  </p>
+
+  <p>
+    It is strongly recommended that you sign your JWTs and verify their signatures using JWKS.
+  </p>
+</div>
