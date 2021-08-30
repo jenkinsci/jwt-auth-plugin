@@ -19,7 +19,7 @@
         <jenkins.version>2.303.1</jenkins.version>
         <java.level>8</java.level>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>    </properties>
-    <name>TODO Plugin</name>
+    <name>JWT Auth Plugin</name>
     <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
 
     <dependencyManagement>
