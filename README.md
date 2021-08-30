@@ -1,24 +1,49 @@
-# jwt-auth
+# Jenkins JWT Auth plugin
 
 ## Introduction
 
-TODO Describe what your plugin does here
+The JWT Auth plugin allows the authentication of users via an upstream component (one could
+be [pomerium](https://www.pomerium.io/)) that provides user information (username and groups)
+via an [JWT](https://jwt.io) header that is passed to it.
+
+It consists of a `SecurityRealm` that identifies the user using that header and supports various
+configuration options.
+
+Once the plugin is active, all requests are assumed to contain the JWT header. If the header
+is not present or the token can not be decoded (and optionally verified), the request is assumed
+to be the anonymous user.
+
+The plugin allows to
+* Specify which header contains the JWT
+* It have a "bearer " prefix or not, both is accepted
+* The mapping of username and group list to the claims can be customized (you can choose which claims to read)
+* Define a JWKS URL to verify the token. JWKS allows key rotation as needed.
+
+Currently, JWKS is the only way to verify a token.
+
+### A word of caution
+
+Be advised to read all documentation what JWTs are and what not. Do not expose Jenkins with this
+plugin enabled directly to the outside world. Jenkins needs to be behind some trusted reverse proxy
+that correctly implements the JWT token generation and does not allow outside users to override it.
+
+Additionally, the plugin allows to setup the authentication without token signing and even tolerate
+invalid tokens. Be sure to read the inline documentation to all configuration parameters.
 
 ## Getting started
 
-TODO Tell users how to configure your plugin here, include screenshots, pipeline examples and 
-configuration-as-code examples.
+After installation, you can go to `Manage Jenkins` -> `Configure Global Security` -> `Security Realms`
+where you see the plugin as an option.
+
+![logo](/assets/plugin.png)
+
+Read through all configuration parameters, they are all documented.
 
 ## Issues
 
-TODO Decide where you're going to host your issues, the default is Jenkins JIRA, but you can also enable GitHub issues,
-If you use GitHub issues there's no need for this section; else add the following line:
-
-Report issues and enhancements in the [Jenkins issue tracker](https://issues.jenkins-ci.org/).
+Report issues and enhancements in the [Github issue tracker](https://github.com/jenkinsci/jwt-auth-plugin/issues).
 
 ## Contributing
-
-TODO review the default [CONTRIBUTING](https://github.com/jenkinsci/.github/blob/master/CONTRIBUTING.md) file and make sure it is appropriate for your plugin, if not then add your own one adapted from the base file
 
 Refer to our [contribution guidelines](https://github.com/jenkinsci/.github/blob/master/CONTRIBUTING.md)
 
