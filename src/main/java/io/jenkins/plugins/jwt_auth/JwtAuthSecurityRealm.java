@@ -23,16 +23,23 @@
  */
 package io.jenkins.plugins.jwt_auth;
 
+import com.auth0.jwk.GuavaCachedJwkProvider;
+import com.auth0.jwk.Jwk;
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.google.common.collect.Lists;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import com.auth0.jwt.interfaces.JWTVerifier;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.security.ChainedServletFilter;
 import hudson.security.SecurityRealm;
+import io.jenkins.plugins.jwt_auth.util.JwtVerifierPicker;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -49,6 +56,7 @@ import javax.servlet.http.HttpServletRequest;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -64,26 +72,46 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	private static final Logger LOGGER = Logger.getLogger(JwtAuthSecurityRealm.class.getName());
 
 	/**
+	 * apparently we need to create an instance here so the auth0 has no runtime problems(?)
+	 */
+	private static final ObjectMapper mapper = new ObjectMapper();
+
+	/**
 	 * map from username to groups
 	 */
 	public transient Hashtable<String, List<GrantedAuthority>> userToGroupsCache;
+
+	/**
+	 * jwk provider
+	 */
+	public transient JwkProvider jwkProvider;
 
 	private final String headerName;
 	private final String userClaimName;
 	private final String groupsClaimName;
 	private final String groupsClaimSeparator;
+	private final String jwksUrl;
+	private final int leewaySeconds;
+	private final boolean allowVerificationFailures;
 
 	@DataBoundConstructor
 	public JwtAuthSecurityRealm(
 			String headerName,
 			String userClaimName,
 			String groupsClaimName,
-			String groupsClaimSeparator
-	) {
+			String groupsClaimSeparator,
+			String jwksUrl,
+			int leewaySeconds,
+			boolean allowVerificationFailures
+	) throws MalformedURLException {
+		super();
 		this.headerName = Util.fixEmptyAndTrim(headerName);
 		this.userClaimName = Util.fixEmptyAndTrim(userClaimName);
 		this.groupsClaimName = Util.fixEmptyAndTrim(groupsClaimName);
 		this.groupsClaimSeparator = Util.fixEmpty(groupsClaimSeparator);
+		this.jwksUrl = Util.fixEmpty(jwksUrl);
+		this.leewaySeconds = leewaySeconds;
+		this.allowVerificationFailures = allowVerificationFailures;
 	}
 
 	/**
@@ -159,7 +187,36 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						.trim();
 
 				try {
+
+					// decode the token
 					DecodedJWT jwt = JWT.decode(headerContent);
+
+					// do we need to prepare for verification?
+					if (jwksUrl != null && !jwksUrl.isEmpty() && jwkProvider == null) {
+						jwkProvider = new GuavaCachedJwkProvider(
+								new UrlJwkProvider(
+										new URL(jwksUrl)
+								)
+						);
+					}
+
+					// do we need to verify?
+					if (jwkProvider != null) {
+						String keyId = jwt.getKeyId();
+						Jwk jwk = jwkProvider.get(keyId);
+						JWTVerifier verifier = JwtVerifierPicker.getVerifier(jwk, leewaySeconds);
+
+						// verify it..
+						try {
+							verifier.verify(jwt);
+						} catch (Throwable t) {
+							if (!allowVerificationFailures) {
+								throw t;
+							} else {
+								LOGGER.log(Level.SEVERE, "Error during JWT verification", t);
+							}
+						}
+					}
 
 					// get username
 					String username = jwt.getClaim(userClaimName).asString();
@@ -179,7 +236,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 								"Unable to read groups from claim '" + groupsClaimName + "'. " +
 										"Consider checking if it's a list or string and configure a correct separator."
 						);
-						groups = Lists.newArrayList();
+						groups = new ArrayList<>();
 					}
 
 					List<GrantedAuthority> grantedGroups = getGrantedGroups(groups);
@@ -193,7 +250,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 					return new JwtAuthAuthenticationToken(username, grantedGroups);
 				} catch (Throwable exception){
-					LOGGER.log(Level.SEVERE, "Could not decode the JWT Token", exception);
+					LOGGER.log(Level.SEVERE, "Could not decode the JWT", exception);
 					// will return anonymous again in the end
 				}
 
@@ -255,5 +312,39 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		public DescriptorImpl(Class<? extends SecurityRealm> clazz) {
 			super(clazz);
 		}
+	}
+
+	@Override
+	public DescriptorImpl getDescriptor() {
+		return (DescriptorImpl) super.getDescriptor();
+	}
+
+	/** getters **/
+	public String getHeaderName() {
+		return headerName;
+	}
+
+	public String getUserClaimName() {
+		return userClaimName;
+	}
+
+	public String getGroupsClaimName() {
+		return groupsClaimName;
+	}
+
+	public String getGroupsClaimSeparator() {
+		return groupsClaimSeparator;
+	}
+
+	public String getJwksUrl() {
+		return jwksUrl;
+	}
+
+	public int getLeewaySeconds() {
+		return leewaySeconds;
+	}
+
+	public boolean isAllowVerificationFailures() {
+		return allowVerificationFailures;
 	}
 }

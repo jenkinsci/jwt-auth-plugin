@@ -20,23 +20,17 @@
             <f:textbox />
         </f:entry>
 
-        <!--
-        <f:entry title="GitHub API URI"  field="githubApiUri" help="/plugin/github-oauth/help/realm/github-api-uri-help.html">
-            <f:textbox default="${descriptor.getDefaultGithubApiUri()}" />
-        </f:entry>
-
-
-        <f:entry title="Client ID"  field="clientID" help="/plugin/github-oauth/help/realm/client-id-help.html">
+        <f:entry title="JWKS JSON URL" field="jwksUrl" help="/plugin/jwt-auth/help/params/headername-help.html">
             <f:textbox />
         </f:entry>
 
-        <f:entry title="Client Secret" field="clientSecret" help="/plugin/github-oauth/help/realm/client-secret-help.html">
-            <f:password />
+        <f:entry title="Verification leeway in seconds" field="leewaySeconds" help="/plugin/jwt-auth/help/params/headername-help.html">
+            <f:number default="1" min="0" />
         </f:entry>
 
-        <f:entry title="OAuth Scope(s)" field="oauthScopes" help="/plugin/github-oauth/help/realm/oauth-scopes-help.html">
-            <f:textbox default="${descriptor.getDefaultOauthScopes()}" />
+        <f:entry title="Allow verification failures" field="allowVerificationFailures" help="/plugin/jwt-auth/help/params/headername-help.html">
+            <f:checkbox />
         </f:entry>
-        -->
+
     </f:section>
 </j:jelly>
