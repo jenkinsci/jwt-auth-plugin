@@ -17,7 +17,7 @@
 
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
         <jenkins.version>2.303.1</jenkins.version>
-        <java.level>8</java.level>
+        <java.level>11</java.level>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>    </properties>
     <name>JWT Auth Plugin</name>
     <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
@@ -95,8 +95,6 @@
             <version>30.1.1-jre</version>
             <scope>test</scope>
         </dependency>
-
-
         <!-- end own test deps -->
 
         <dependency>
