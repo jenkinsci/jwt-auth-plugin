@@ -23,23 +23,14 @@
  */
 package io.jenkins.plugins.jwt_auth;
 
-import com.auth0.jwk.GuavaCachedJwkProvider;
-import com.auth0.jwk.Jwk;
-import com.auth0.jwk.JwkProvider;
-import com.auth0.jwk.UrlJwkProvider;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auth0.jwt.interfaces.JWTVerifier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.security.ChainedServletFilter;
 import hudson.security.SecurityRealm;
-import io.jenkins.plugins.jwt_auth.util.JwtVerifierPicker;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -55,6 +46,11 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.jose4j.jwk.HttpsJwks;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
@@ -82,9 +78,9 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	public transient Hashtable<String, List<GrantedAuthority>> userToGroupsCache;
 
 	/**
-	 * jwk provider
+	 * jwks resolver
 	 */
-	public transient JwkProvider jwkProvider;
+	public transient HttpsJwksVerificationKeyResolver jwksResolver;
 
 	private final String headerName;
 	private final String userClaimName;
@@ -188,45 +184,36 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 				try {
 
+
 					// decode the token
-					DecodedJWT jwt = JWT.decode(headerContent);
+					//DecodedJWT jwt = JWT.decode(headerContent);
+					
+					// new one 
+					JwtConsumerBuilder jwtConsumerBuilder = new JwtConsumerBuilder();
+					jwtConsumerBuilder
+							//.setRequireExpirationTime()
+							.setAllowedClockSkewInSeconds(leewaySeconds);
 
-					// do we need to prepare for verification?
-					if (jwksUrl != null && !jwksUrl.isEmpty() && jwkProvider == null) {
-						jwkProvider = new GuavaCachedJwkProvider(
-								new UrlJwkProvider(
-										new URL(jwksUrl)
-								)
+					// new one
+					if (jwksUrl != null && !jwksUrl.isEmpty() && jwksResolver == null) {
+						jwksResolver = new HttpsJwksVerificationKeyResolver(
+								new HttpsJwks(jwksUrl)
 						);
+						jwtConsumerBuilder.setVerificationKeyResolver(jwksResolver);
 					}
 
-					// do we need to verify?
-					if (jwkProvider != null) {
-						String keyId = jwt.getKeyId();
-						Jwk jwk = jwkProvider.get(keyId);
-						JWTVerifier verifier = JwtVerifierPicker.getVerifier(jwk, leewaySeconds);
-
-						// verify it..
-						try {
-							verifier.verify(jwt);
-						} catch (Throwable t) {
-							if (!allowVerificationFailures) {
-								throw t;
-							} else {
-								LOGGER.log(Level.SEVERE, "Error during JWT verification", t);
-							}
-						}
-					}
+					JwtConsumer jwtConsumer = jwtConsumerBuilder.build();
+					JwtClaims jwtClaims = jwtConsumer.processToClaims(headerContent);
 
 					// get username
-					String username = jwt.getClaim(userClaimName).asString();
+					String username = jwtClaims.getClaimValueAsString(userClaimName);
 
 					// get groups.. try as list first..
 					List<String> groups;
-					groups = jwt.getClaim(groupsClaimName).asList(String.class);
+					groups = jwtClaims.getStringListClaimValue(groupsClaimName);
 					if (groups == null && groupsClaimSeparator != null && !groupsClaimSeparator.isEmpty()) {
 						// fall back and try to expose a string into a list
-						String groupList = jwt.getClaim(groupsClaimName).asString();
+						String groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
 						groups = Arrays.asList(StringUtils.splitPreserveAllTokens(groupList, groupsClaimSeparator));
 					}
 

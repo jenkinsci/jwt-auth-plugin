@@ -64,6 +64,7 @@ public class JwtAuthSecurityRealmTest {
         rsaJwk.setKeyId("id1");
 
         ecJwk = EcJwkGenerator.generateJwk(EllipticCurves.P256);
+        ecJwk.setAlgorithm(AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256);
         ecJwk.setKeyId("id2");
 
         JsonWebKeySet jwks = new JsonWebKeySet(rsaJwk, ecJwk);
@@ -91,14 +92,13 @@ public class JwtAuthSecurityRealmTest {
                         "testuser",
                         List.of("hans")
                 },
-                // normal use case with ec key
                 new Object[]{
                         "Authorization",
                         "username",
                         "groups",
                         "",
                         "id2",
-                        Algorithm
+                        Algorithm.ECDSA256(ecJwk.getECPublicKey(), ecJwk.getEcPrivateKey()),
                         "testuser",
                         List.of("hans")
                 }
