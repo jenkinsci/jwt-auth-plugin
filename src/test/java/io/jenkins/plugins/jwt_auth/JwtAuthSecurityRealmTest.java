@@ -1,10 +1,29 @@
+/*
+ * The MIT License
+ *
+ * Copyright (c) 2021 Swisscom (Schweiz) AG, Dario Nuevo
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package io.jenkins.plugins.jwt_auth;
 
-// for reference https://www.wwt.com/article/automated-testing-with-spring-boot-as-an-oauth2-resource-server/
-// https://bitbucket.org/b_c/jose4j/wiki/JWT%20Examples
-
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -18,6 +37,8 @@ import hudson.security.SecurityRealm;
 import jenkins.model.Jenkins;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.JwtClaims;
 import org.jose4j.keys.EllipticCurves;
 import org.jose4j.lang.JoseException;
 import org.junit.*;
@@ -43,14 +64,15 @@ public class JwtAuthSecurityRealmTest {
     private Jenkins jenkins;
 
     /* test params */
+    private String jwksUrl;
     private String headerName;
     private String userClaimName;
     private String groupClaimName;
     private String groupClaimSeparator;
-    private String keyId;
-    private Algorithm algorithm;
+    private PublicJsonWebKey jsonWebKey;
     private String expectedUser;
     private List<String> expectedGroups;
+    private String groupListString;
 
     @Before
     public void prepare() {
@@ -81,49 +103,78 @@ public class JwtAuthSecurityRealmTest {
         );
 
         return ImmutableList.of(
-                // normal use case with rsa key
+/*                // normal use case with rsa key
                 new Object[]{
+                        "http://localhost:9999/.well-known/jwks.json",
                         "Authorization",
                         "username",
                         "groups",
                         "",
-                        "id1",
-                        Algorithm.RSA256(rsaJwk.getRsaPublicKey(), rsaJwk.getRsaPrivateKey()),
+                        rsaJwk,
                         "testuser",
-                        List.of("hans")
+                        List.of("hans"),
+                        null
                 },
+                // normal use case with ec key
                 new Object[]{
-                        "Authorization",
+                        "http://localhost:9999/.well-known/jwks.json",
+                        "custom-header-name",
                         "username",
                         "groups",
                         "",
-                        "id2",
-                        Algorithm.ECDSA256(ecJwk.getECPublicKey(), ecJwk.getEcPrivateKey()),
+                        ecJwk,
                         "testuser",
-                        List.of("hans")
+                        List.of("hans"),
+                        null
+                },
+                // ec key, group list as string with separator
+                new Object[]{
+                        "http://localhost:9999/.well-known/jwks.json",
+                        "other-header-NAME",
+                        "username",
+                        "string-group-field",
+                        "|",
+                        ecJwk,
+                        "testuser",
+                        List.of("group1", "group2", "group3"),
+                        "group1|group2|group3"
+                },*/
+                // no jwks defined in the realm
+                new Object[]{
+                        "",
+                        "other-header-NAME",
+                        "username",
+                        "groups",
+                        "",
+                        ecJwk,
+                        "testuser",
+                        List.of("group1"),
+                        null
                 }
         );
 
     }
 
     public JwtAuthSecurityRealmTest(
+            String jwksUrl,
             String headerName,
             String userClaimName,
             String groupClaimName,
             String groupClaimSeparator,
-            String keyId,
-            Algorithm signAlgo,
+            PublicJsonWebKey jsonWebKey,
             String expectedUserName,
-            List<String> expectedGroupList
+            List<String> expectedGroupList,
+            String groupListString
     ) {
+        this.jwksUrl = jwksUrl;
         this.headerName = headerName;
         this.userClaimName = userClaimName;
         this.groupClaimName = groupClaimName;
         this.groupClaimSeparator = groupClaimSeparator;
-        this.keyId = keyId;
-        this.algorithm = signAlgo;
+        this.jsonWebKey = jsonWebKey;
         this.expectedUser = expectedUserName;
         this.expectedGroups = expectedGroupList;
+        this.groupListString = groupListString;
     }
 
     @Test
@@ -134,21 +185,34 @@ public class JwtAuthSecurityRealmTest {
                 userClaimName,
                 groupClaimName,
                 groupClaimSeparator,
-                "http://localhost:9999/.well-known/jwks.json",
+                jwksUrl,
                 0,
                 false
         );
         jenkins.setSecurityRealm(realm);
 
-        String token = JWT.create()
-                .withIssuer("test")
-                .withKeyId(keyId)
-                .withClaim(userClaimName, expectedUser)
-                .withClaim(groupClaimName, expectedGroups)
-                .sign(algorithm);
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuedAtToNow();
+        claims.setNotBeforeMinutesInThePast(2);
+        claims.setExpirationTimeMinutesInTheFuture(10);
+        claims.setIssuer("test");
+        claims.setStringClaim(userClaimName, expectedUser);
+
+        // list or string type for groups?
+        if (groupListString != null) {
+            claims.setStringClaim(groupClaimName, groupListString);
+        } else {
+            claims.setStringListClaim(groupClaimName, expectedGroups);
+        }
+
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setPayload(claims.toJson());
+        jws.setKey(jsonWebKey.getPrivateKey());
+        jws.setKeyIdHeaderValue(jsonWebKey.getKeyId());
+        jws.setAlgorithmHeaderValue(jsonWebKey.getAlgorithm());
 
         final JenkinsRule.WebClient client = jenkinsRule.createWebClient();
-        client.addRequestHeader(headerName, token);
+        client.addRequestHeader(headerName, jws.getCompactSerialization());
 
         final Authentication authentication = client.executeOnServer(Jenkins::getAuthentication2);
 

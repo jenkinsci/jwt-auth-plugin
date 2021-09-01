@@ -23,7 +23,6 @@
  */
 package io.jenkins.plugins.jwt_auth;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
@@ -66,11 +65,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	private static final Logger LOGGER = Logger.getLogger(JwtAuthSecurityRealm.class.getName());
-
-	/**
-	 * apparently we need to create an instance here so the auth0 has no runtime problems(?)
-	 */
-	private static final ObjectMapper mapper = new ObjectMapper();
 
 	/**
 	 * map from username to groups
@@ -184,10 +178,6 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 				try {
 
-
-					// decode the token
-					//DecodedJWT jwt = JWT.decode(headerContent);
-					
 					// new one 
 					JwtConsumerBuilder jwtConsumerBuilder = new JwtConsumerBuilder();
 					jwtConsumerBuilder
@@ -199,7 +189,14 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						jwksResolver = new HttpsJwksVerificationKeyResolver(
 								new HttpsJwks(jwksUrl)
 						);
+					}
+
+					if (jwksResolver != null) {
 						jwtConsumerBuilder.setVerificationKeyResolver(jwksResolver);
+					} else {
+						// no jwks.. accept no signature
+						jwtConsumerBuilder.setDisableRequireSignature();
+						jwtConsumerBuilder.setSkipSignatureVerification();
 					}
 
 					JwtConsumer jwtConsumer = jwtConsumerBuilder.build();
@@ -210,9 +207,10 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 					// get groups.. try as list first..
 					List<String> groups;
-					groups = jwtClaims.getStringListClaimValue(groupsClaimName);
-					if (groups == null && groupsClaimSeparator != null && !groupsClaimSeparator.isEmpty()) {
-						// fall back and try to expose a string into a list
+
+					if (jwtClaims.isClaimValueStringList(groupsClaimName)) {
+						groups = jwtClaims.getStringListClaimValue(groupsClaimName);
+					} else {
 						String groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
 						groups = Arrays.asList(StringUtils.splitPreserveAllTokens(groupList, groupsClaimSeparator));
 					}

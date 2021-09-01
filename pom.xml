@@ -41,6 +41,7 @@
         </dependency>
 
         <!-- our own deps -->
+        <!--
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>jackson2-api</artifactId>
@@ -68,14 +69,15 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- end our own deps -->
-
-        <!-- our own test deps -->
+        -->
         <dependency>
             <groupId>org.bitbucket.b_c</groupId>
             <artifactId>jose4j</artifactId>
             <version>0.7.9</version>
         </dependency>
+        <!-- end our own deps -->
+
+        <!-- our own test deps -->
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
