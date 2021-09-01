@@ -29,7 +29,6 @@ import hudson.model.Descriptor;
 import hudson.security.ChainedServletFilter;
 import hudson.security.SecurityRealm;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -80,6 +79,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	private final String userClaimName;
 	private final String groupsClaimName;
 	private final String groupsClaimSeparator;
+	private final String acceptedIssuer;
+	private final String acceptedAudience;
 	private final String jwksUrl;
 	private final int leewaySeconds;
 	private final boolean allowVerificationFailures;
@@ -90,15 +91,19 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 			String userClaimName,
 			String groupsClaimName,
 			String groupsClaimSeparator,
+			String acceptedIssuer,
+			String acceptedAudience,
 			String jwksUrl,
 			int leewaySeconds,
 			boolean allowVerificationFailures
-	) throws MalformedURLException {
+	) {
 		super();
 		this.headerName = Util.fixEmptyAndTrim(headerName);
 		this.userClaimName = Util.fixEmptyAndTrim(userClaimName);
 		this.groupsClaimName = Util.fixEmptyAndTrim(groupsClaimName);
 		this.groupsClaimSeparator = Util.fixEmpty(groupsClaimSeparator);
+		this.acceptedIssuer = Util.fixEmptyAndTrim(acceptedIssuer);
+		this.acceptedAudience = Util.fixEmptyAndTrim(acceptedAudience);
 		this.jwksUrl = Util.fixEmpty(jwksUrl);
 		this.leewaySeconds = leewaySeconds;
 		this.allowVerificationFailures = allowVerificationFailures;
@@ -181,7 +186,6 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					// new one 
 					JwtConsumerBuilder jwtConsumerBuilder = new JwtConsumerBuilder();
 					jwtConsumerBuilder
-							//.setRequireExpirationTime()
 							.setAllowedClockSkewInSeconds(leewaySeconds);
 
 					// new one
@@ -199,8 +203,37 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						jwtConsumerBuilder.setSkipSignatureVerification();
 					}
 
+					// issuer restriction?
+					if (acceptedIssuer != null && !acceptedIssuer.isEmpty()) {
+						jwtConsumerBuilder.setExpectedIssuers(true, Util.tokenize(acceptedIssuer, ","));
+					}
+
+					// audience restriction?
+					if (acceptedAudience != null && !acceptedAudience.isEmpty()) {
+						jwtConsumerBuilder.setExpectedAudience(true, Util.tokenize(acceptedAudience, ","));
+					} else {
+						jwtConsumerBuilder.setSkipDefaultAudienceValidation();
+					}
+
 					JwtConsumer jwtConsumer = jwtConsumerBuilder.build();
-					JwtClaims jwtClaims = jwtConsumer.processToClaims(headerContent);
+					JwtClaims jwtClaims;
+
+					try {
+						jwtClaims = jwtConsumer.processToClaims(headerContent);
+					} catch (Throwable t) {
+						if (!allowVerificationFailures)	{
+							throw t;
+						}
+
+						LOGGER.log(
+							Level.SEVERE, "Verification error, but it is allowed by configuration", t
+						);
+
+						// re-run
+						jwtConsumerBuilder.setSkipAllValidators();
+						jwtConsumer = jwtConsumerBuilder.build();
+						jwtClaims = jwtConsumer.processToClaims(headerContent);
+					}
 
 					// get username
 					String username = jwtClaims.getClaimValueAsString(userClaimName);
@@ -319,6 +352,14 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	public String getGroupsClaimSeparator() {
 		return groupsClaimSeparator;
+	}
+
+	public String getAcceptedIssuer() {
+		return acceptedIssuer;
+	}
+
+	public String getAcceptedAudience() {
+		return acceptedAudience;
 	}
 
 	public String getJwksUrl() {

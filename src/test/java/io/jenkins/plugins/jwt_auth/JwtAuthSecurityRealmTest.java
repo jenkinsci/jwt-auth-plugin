@@ -65,13 +65,17 @@ public class JwtAuthSecurityRealmTest {
 
     /* test params */
     private String jwksUrl;
+    private String acceptableIssuer;
+    private String acceptableAudience;
     private String headerName;
     private String userClaimName;
     private String groupClaimName;
     private String groupClaimSeparator;
     private PublicJsonWebKey jsonWebKey;
+    private String usernameHeaderValue;
     private String expectedUser;
     private List<String> expectedGroups;
+    private boolean allowVerificationFailures;
     private String groupListString;
 
     @Before
@@ -103,44 +107,58 @@ public class JwtAuthSecurityRealmTest {
         );
 
         return ImmutableList.of(
-/*                // normal use case with rsa key
+                // normal use case with rsa key
                 new Object[]{
                         "http://localhost:9999/.well-known/jwks.json",
+                        "",
+                        "",
                         "Authorization",
                         "username",
                         "groups",
                         "",
                         rsaJwk,
                         "testuser",
+                        "testuser",
                         List.of("hans"),
-                        null
+                        null,
+                        false
                 },
                 // normal use case with ec key
                 new Object[]{
                         "http://localhost:9999/.well-known/jwks.json",
+                        "",
+                        "",
                         "custom-header-name",
                         "username",
                         "groups",
                         "",
                         ecJwk,
                         "testuser",
+                        "testuser",
                         List.of("hans"),
-                        null
+                        null,
+                        false
                 },
                 // ec key, group list as string with separator
                 new Object[]{
                         "http://localhost:9999/.well-known/jwks.json",
+                        "",
+                        "",
                         "other-header-NAME",
                         "username",
                         "string-group-field",
                         "|",
                         ecJwk,
                         "testuser",
+                        "testuser",
                         List.of("group1", "group2", "group3"),
-                        "group1|group2|group3"
-                },*/
+                        "group1|group2|group3",
+                        false
+                },
                 // no jwks defined in the realm
                 new Object[]{
+                        "",
+                        "",
                         "",
                         "other-header-NAME",
                         "username",
@@ -148,8 +166,74 @@ public class JwtAuthSecurityRealmTest {
                         "",
                         ecJwk,
                         "testuser",
+                        "testuser",
                         List.of("group1"),
-                        null
+                        null,
+                        false
+                },
+                // audience and issuer matching
+                new Object[]{
+                        "http://localhost:9999/.well-known/jwks.json",
+                        "issuer1,test",
+                        "audience1,testaudience",
+                        "other-header-NAME",
+                        "username",
+                        "groups",
+                        "",
+                        ecJwk,
+                        "testuser",
+                        "testuser",
+                        List.of("group1"),
+                        null,
+                        false
+                },
+                // audience not matching -> anonymous
+                new Object[]{
+                        "http://localhost:9999/.well-known/jwks.json",
+                        "issuer1,test",
+                        "audience1",
+                        "other-header-NAME",
+                        "username",
+                        "groups",
+                        "",
+                        ecJwk,
+                        "testuser",
+                        Jenkins.ANONYMOUS2.getName(),
+                        List.of(), // groups not added
+                        null,
+                        false
+                },
+                // issuer not matching
+                new Object[]{
+                        "http://localhost:9999/.well-known/jwks.json",
+                        "issuer1",
+                        "audience1,testaudience",
+                        "other-header-NAME",
+                        "username",
+                        "groups",
+                        "",
+                        ecJwk,
+                        "testuser",
+                        Jenkins.ANONYMOUS2.getName(),
+                        List.of(), // groups not added
+                        null,
+                        false
+                },
+                // issuer not matching, but verification errors are allowed
+                new Object[]{
+                        "http://localhost:9999/.well-known/jwks.json",
+                        "issuer1",
+                        "audience1,testaudience",
+                        "other-header-NAME",
+                        "username",
+                        "groups",
+                        "",
+                        ecJwk,
+                        "testuser",
+                        "testuser",
+                        List.of("groups1"), // groups not added
+                        null,
+                        true // is allowed!
                 }
         );
 
@@ -157,24 +241,32 @@ public class JwtAuthSecurityRealmTest {
 
     public JwtAuthSecurityRealmTest(
             String jwksUrl,
+            String acceptableIssuer,
+            String acceptableAudience,
             String headerName,
             String userClaimName,
             String groupClaimName,
             String groupClaimSeparator,
             PublicJsonWebKey jsonWebKey,
+            String usernameHeaderValue,
             String expectedUserName,
             List<String> expectedGroupList,
-            String groupListString
+            String groupListString,
+            boolean allowVerificationFailures
     ) {
         this.jwksUrl = jwksUrl;
+        this.acceptableIssuer = acceptableIssuer;
+        this.acceptableAudience = acceptableAudience;
         this.headerName = headerName;
         this.userClaimName = userClaimName;
         this.groupClaimName = groupClaimName;
         this.groupClaimSeparator = groupClaimSeparator;
         this.jsonWebKey = jsonWebKey;
+        this.usernameHeaderValue = usernameHeaderValue;
         this.expectedUser = expectedUserName;
         this.expectedGroups = expectedGroupList;
         this.groupListString = groupListString;
+        this.allowVerificationFailures = allowVerificationFailures;
     }
 
     @Test
@@ -185,9 +277,11 @@ public class JwtAuthSecurityRealmTest {
                 userClaimName,
                 groupClaimName,
                 groupClaimSeparator,
+                acceptableIssuer,
+                acceptableAudience,
                 jwksUrl,
                 0,
-                false
+                allowVerificationFailures
         );
         jenkins.setSecurityRealm(realm);
 
@@ -196,7 +290,8 @@ public class JwtAuthSecurityRealmTest {
         claims.setNotBeforeMinutesInThePast(2);
         claims.setExpirationTimeMinutesInTheFuture(10);
         claims.setIssuer("test");
-        claims.setStringClaim(userClaimName, expectedUser);
+        claims.setAudience("testaudience");
+        claims.setStringClaim(userClaimName, usernameHeaderValue);
 
         // list or string type for groups?
         if (groupListString != null) {
@@ -216,13 +311,18 @@ public class JwtAuthSecurityRealmTest {
 
         final Authentication authentication = client.executeOnServer(Jenkins::getAuthentication2);
 
-        List<GrantedAuthority> groups = new ArrayList<>();
-        groups.add(SecurityRealm.AUTHENTICATED_AUTHORITY2);
+        Assert.assertEquals(expectedUser, authentication.getName());
+
+        Collection<GrantedAuthority> groups = new ArrayList<>();
+        if (authentication.getName().equals(Jenkins.ANONYMOUS2.getName())) {
+            groups.addAll(Jenkins.ANONYMOUS2.getAuthorities());
+        } else {
+            groups.add(SecurityRealm.AUTHENTICATED_AUTHORITY2);
+        }
+
         for (String groupName : expectedGroups) {
             groups.add(new SimpleGrantedAuthority(groupName));
         }
-
-        Assert.assertEquals(expectedUser, authentication.getName());
 
         Assert.assertEquals(groups.size(), authentication.getAuthorities().size());
         Assert.assertTrue(groups.containsAll(authentication.getAuthorities()));
