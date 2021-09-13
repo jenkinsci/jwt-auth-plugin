@@ -20,6 +20,14 @@
             <f:textbox />
         </f:entry>
 
+        <f:entry title="Acceptable issuers" field="acceptedIssuer" help="/plugin/jwt-auth/help/params/acceptableissuer-help.html">
+            <f:textbox />
+        </f:entry>
+
+        <f:entry title="Acceptable audiences" field="acceptedAudience" help="/plugin/jwt-auth/help/params/acceptableaudience-help.html">
+            <f:textbox />
+        </f:entry>
+
         <f:entry title="JWKS JSON URL" field="jwksUrl" help="/plugin/jwt-auth/help/params/jwksjsonurl-help.html">
             <f:textbox />
         </f:entry>
