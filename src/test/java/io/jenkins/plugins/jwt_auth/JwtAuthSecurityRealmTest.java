@@ -29,10 +29,10 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import com.google.common.collect.ImmutableList;
 import hudson.security.SecurityRealm;
 import jenkins.model.Jenkins;
 import org.jose4j.jwk.*;
@@ -53,7 +53,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 public class JwtAuthSecurityRealmTest {
 
     @ClassRule
-    public static WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.options().port(9999));
+    public static WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.options().port(9191));
 
     public static RsaJsonWebKey rsaJwk;
     public static EllipticCurveJsonWebKey ecJwk;
@@ -106,10 +106,10 @@ public class JwtAuthSecurityRealmTest {
                         )
         );
 
-        return ImmutableList.of(
+        return Arrays.asList(
                 // normal use case with rsa key
                 new Object[]{
-                        "http://localhost:9999/.well-known/jwks.json",
+                        "http://localhost:9191/.well-known/jwks.json",
                         "",
                         "",
                         "Authorization",
@@ -119,13 +119,13 @@ public class JwtAuthSecurityRealmTest {
                         rsaJwk,
                         "testuser",
                         "testuser",
-                        List.of("hans"),
+                        Arrays.asList("hans"),
                         null,
                         false
                 },
                 // normal use case with ec key
                 new Object[]{
-                        "http://localhost:9999/.well-known/jwks.json",
+                        "http://localhost:9191/.well-known/jwks.json",
                         "",
                         "",
                         "custom-header-name",
@@ -135,13 +135,13 @@ public class JwtAuthSecurityRealmTest {
                         ecJwk,
                         "testuser",
                         "testuser",
-                        List.of("hans"),
+                        Arrays.asList("hans"),
                         null,
                         false
                 },
                 // ec key, group list as string with separator
                 new Object[]{
-                        "http://localhost:9999/.well-known/jwks.json",
+                        "http://localhost:9191/.well-known/jwks.json",
                         "",
                         "",
                         "other-header-NAME",
@@ -151,7 +151,7 @@ public class JwtAuthSecurityRealmTest {
                         ecJwk,
                         "testuser",
                         "testuser",
-                        List.of("group1", "group2", "group3"),
+                        Arrays.asList("group1", "group2", "group3"),
                         "group1|group2|group3",
                         false
                 },
@@ -167,13 +167,13 @@ public class JwtAuthSecurityRealmTest {
                         ecJwk,
                         "testuser",
                         "testuser",
-                        List.of("group1"),
+                        Arrays.asList("group1"),
                         null,
                         false
                 },
                 // audience and issuer matching
                 new Object[]{
-                        "http://localhost:9999/.well-known/jwks.json",
+                        "http://localhost:9191/.well-known/jwks.json",
                         "issuer1,test",
                         "audience1,testaudience",
                         "other-header-NAME",
@@ -183,13 +183,13 @@ public class JwtAuthSecurityRealmTest {
                         ecJwk,
                         "testuser",
                         "testuser",
-                        List.of("group1"),
+                        Arrays.asList("group1"),
                         null,
                         false
                 },
                 // audience not matching -> anonymous
                 new Object[]{
-                        "http://localhost:9999/.well-known/jwks.json",
+                        "http://localhost:9191/.well-known/jwks.json",
                         "issuer1,test",
                         "audience1",
                         "other-header-NAME",
@@ -199,13 +199,13 @@ public class JwtAuthSecurityRealmTest {
                         ecJwk,
                         "testuser",
                         Jenkins.ANONYMOUS2.getName(),
-                        List.of(), // groups not added
+                        Arrays.asList(), // groups not added
                         null,
                         false
                 },
                 // issuer not matching
                 new Object[]{
-                        "http://localhost:9999/.well-known/jwks.json",
+                        "http://localhost:9191/.well-known/jwks.json",
                         "issuer1",
                         "audience1,testaudience",
                         "other-header-NAME",
@@ -215,13 +215,13 @@ public class JwtAuthSecurityRealmTest {
                         ecJwk,
                         "testuser",
                         Jenkins.ANONYMOUS2.getName(),
-                        List.of(), // groups not added
+                        Arrays.asList(), // groups not added
                         null,
                         false
                 },
                 // issuer not matching, but verification errors are allowed
                 new Object[]{
-                        "http://localhost:9999/.well-known/jwks.json",
+                        "http://localhost:9191/.well-known/jwks.json",
                         "issuer1",
                         "audience1,testaudience",
                         "other-header-NAME",
@@ -231,7 +231,7 @@ public class JwtAuthSecurityRealmTest {
                         ecJwk,
                         "testuser",
                         "testuser",
-                        List.of("groups1"), // groups not added
+                        Arrays.asList("groups1"), // groups not added
                         null,
                         true // is allowed!
                 }
