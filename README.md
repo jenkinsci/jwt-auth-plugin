@@ -39,6 +39,12 @@ where you see the plugin as an option.
 
 Read through all configuration parameters, they are all documented.
 
+## CasC (Configuration as Code) support
+
+This plugin aims to support [Jenkins CasC (JCasC)](https://github.com/jenkinsci/configuration-as-code-plugin).
+
+If you want to configure the SecurityRealm via CasC; [check the example configuration in our tests](https://github.com/jenkinsci/jwt-auth-plugin/blob/develop/src/test/resources/configuration-as-code.yml). 
+
 ## Issues
 
 Report issues and enhancements in the [Github issue tracker](https://github.com/jenkinsci/jwt-auth-plugin/issues).
