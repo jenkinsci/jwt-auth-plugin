@@ -1,0 +1,12 @@
+jenkins:
+  securityRealm:
+    jwtAuth:
+      headerName: jwt-token-header
+      userClaimName: username
+      groupsClaimName: groups
+      groupsClaimSeparator: "-"
+      acceptedIssuer: myIssuer
+      acceptedAudience: myAudience
+      jwksUrl: http://jwks-host/.well-known/openid
+      leewaySeconds: 3
+      allowVerificationFailures: true

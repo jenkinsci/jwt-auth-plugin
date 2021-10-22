@@ -1,0 +1,1 @@
+mvn -Dprofile=jenkins release:prepare release:perform
