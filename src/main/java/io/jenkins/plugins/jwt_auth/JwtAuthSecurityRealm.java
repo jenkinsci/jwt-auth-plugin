@@ -63,7 +63,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 /**
  * @author Kohsuke Kawaguchi
  */
-@Symbol("jwt_auth")
 public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	private static final Logger LOGGER = Logger.getLogger(JwtAuthSecurityRealm.class.getName());
@@ -341,47 +340,38 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	}
 
 	/** getters **/
-	@DataBoundSetter
 	public String getHeaderName() {
 		return headerName;
 	}
 
-	@DataBoundSetter
 	public String getUserClaimName() {
 		return userClaimName;
 	}
 
-	@DataBoundSetter
 	public String getGroupsClaimName() {
 		return groupsClaimName;
 	}
 
-	@DataBoundSetter
 	public String getGroupsClaimSeparator() {
 		return groupsClaimSeparator;
 	}
 
-	@DataBoundSetter
 	public String getAcceptedIssuer() {
 		return acceptedIssuer;
 	}
 
-	@DataBoundSetter
 	public String getAcceptedAudience() {
 		return acceptedAudience;
 	}
 
-	@DataBoundSetter
 	public String getJwksUrl() {
 		return jwksUrl;
 	}
 
-	@DataBoundSetter
 	public int getLeewaySeconds() {
 		return leewaySeconds;
 	}
 
-	@DataBoundSetter
 	public boolean isAllowVerificationFailures() {
 		return allowVerificationFailures;
 	}

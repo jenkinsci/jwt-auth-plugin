@@ -1,12 +1,12 @@
-unclassified:
-  jwt_auth:
-    authentication:
-      password: "{AQAAABAAAAAQerzX1sPSYnExkhL/IPqqen3IXjJDVYLe/PR1+30xdA8=}"
-      username: "fakeuser"
-    charset: "UTF-8"
-    defaultSuffix: "@mydomain.com"
-    replyToAddress: "noreplay@mydomain.com"
-    smtpHost: "smtp.acme.com"
-    smtpPort: "808080"
-    useSsl: true
-    useTls: true
+jenkins:
+  securityRealm:
+    jwtAuth:
+      headerName: jwt-token-header
+      userClaimName: username
+      groupsClaimName: groups
+      groupsClaimSeparator: "-"
+      acceptedIssuer: myIssuer
+      acceptedAudience: myAudience
+      jwksUrl: http://jwks-host/.well-known/openid
+      leewaySeconds: 3
+      allowVerificationFailures: true
