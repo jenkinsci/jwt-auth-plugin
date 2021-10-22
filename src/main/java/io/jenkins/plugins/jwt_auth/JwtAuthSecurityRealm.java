@@ -44,12 +44,14 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -61,6 +63,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 /**
  * @author Kohsuke Kawaguchi
  */
+@Symbol("jwt_auth")
 public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	private static final Logger LOGGER = Logger.getLogger(JwtAuthSecurityRealm.class.getName());
@@ -338,38 +341,47 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	}
 
 	/** getters **/
+	@DataBoundSetter
 	public String getHeaderName() {
 		return headerName;
 	}
 
+	@DataBoundSetter
 	public String getUserClaimName() {
 		return userClaimName;
 	}
 
+	@DataBoundSetter
 	public String getGroupsClaimName() {
 		return groupsClaimName;
 	}
 
+	@DataBoundSetter
 	public String getGroupsClaimSeparator() {
 		return groupsClaimSeparator;
 	}
 
+	@DataBoundSetter
 	public String getAcceptedIssuer() {
 		return acceptedIssuer;
 	}
 
+	@DataBoundSetter
 	public String getAcceptedAudience() {
 		return acceptedAudience;
 	}
 
+	@DataBoundSetter
 	public String getJwksUrl() {
 		return jwksUrl;
 	}
 
+	@DataBoundSetter
 	public int getLeewaySeconds() {
 		return leewaySeconds;
 	}
 
+	@DataBoundSetter
 	public boolean isAllowVerificationFailures() {
 		return allowVerificationFailures;
 	}
