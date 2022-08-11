@@ -155,6 +155,22 @@ public class JwtAuthSecurityRealmTest {
                         "group1|group2|group3",
                         false
                 },
+                // Azure passes groups as [group1, group2, group3]
+                new Object[]{
+                        "http://localhost:9191/.well-known/jwks.json",
+                        "",
+                        "",
+                        "other-header-NAME",
+                        "username",
+                        "string-group-field",
+                        ", []",
+                        ecJwk,
+                        "testuser",
+                        "testuser",
+                        Arrays.asList("group1", "group2", "group3"),
+                        "[group1, group2, group3]",
+                        false
+                },
                 // no jwks defined in the realm
                 new Object[]{
                         "",
