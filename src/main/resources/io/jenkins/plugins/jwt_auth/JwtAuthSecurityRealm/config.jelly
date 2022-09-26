@@ -20,6 +20,15 @@
             <f:textbox />
         </f:entry>
 
+        <f:entry title="Email claim name" field="emailClaimName" help="/plugin/jwt-auth/help/params/emailclaim-help.html">
+            <f:textbox default="${descriptor.getDefaultEmailClaimName()}" />
+        </f:entry>
+
+        <f:entry title="Full Name claim name" field="fullNameClaim" help="/plugin/jwt-auth/help/params/fullnameclaim-help.html">
+            <f:textbox default="${descriptor.getDefaultFullNameClaim()}" />
+        </f:entry>
+
+
         <f:entry title="Acceptable issuers" field="acceptedIssuer" help="/plugin/jwt-auth/help/params/acceptableissuer-help.html">
             <f:textbox />
         </f:entry>

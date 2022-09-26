@@ -34,6 +34,8 @@ import java.util.Collection;
 import java.util.List;
 
 import hudson.security.SecurityRealm;
+import hudson.model.User;
+import hudson.tasks.Mailer;
 import jenkins.model.Jenkins;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -77,6 +79,8 @@ public class JwtAuthSecurityRealmTest {
     private List<String> expectedGroups;
     private boolean allowVerificationFailures;
     private String groupListString;
+    private String emailClaimName;
+    private String fullNameClaim;
 
     @Before
     public void prepare() {
@@ -121,7 +125,9 @@ public class JwtAuthSecurityRealmTest {
                         "testuser",
                         Arrays.asList("hans"),
                         null,
-                        false
+                        false,
+                        "email",
+                        "fullName"
                 },
                 // normal use case with ec key
                 new Object[]{
@@ -137,7 +143,9 @@ public class JwtAuthSecurityRealmTest {
                         "testuser",
                         Arrays.asList("hans"),
                         null,
-                        false
+                        false,
+                        "email",
+                        "fullName"
                 },
                 // ec key, group list as string with separator
                 new Object[]{
@@ -153,7 +161,9 @@ public class JwtAuthSecurityRealmTest {
                         "testuser",
                         Arrays.asList("group1", "group2", "group3"),
                         "group1|group2|group3",
-                        false
+                        false,
+                        "email",
+                        "fullName"
                 },
                 // no jwks defined in the realm
                 new Object[]{
@@ -169,7 +179,9 @@ public class JwtAuthSecurityRealmTest {
                         "testuser",
                         Arrays.asList("group1"),
                         null,
-                        false
+                        false,
+                        "email",
+                        "fullName"
                 },
                 // audience and issuer matching
                 new Object[]{
@@ -185,7 +197,9 @@ public class JwtAuthSecurityRealmTest {
                         "testuser",
                         Arrays.asList("group1"),
                         null,
-                        false
+                        false,
+                        "email",
+                        "fullName"
                 },
                 // audience not matching -> anonymous
                 new Object[]{
@@ -201,7 +215,9 @@ public class JwtAuthSecurityRealmTest {
                         Jenkins.ANONYMOUS2.getName(),
                         Arrays.asList(), // groups not added
                         null,
-                        false
+                        false,
+                        "email",
+                        "fullName"
                 },
                 // issuer not matching
                 new Object[]{
@@ -217,7 +233,9 @@ public class JwtAuthSecurityRealmTest {
                         Jenkins.ANONYMOUS2.getName(),
                         Arrays.asList(), // groups not added
                         null,
-                        false
+                        false,
+                        "email",
+                        "fullName"
                 },
                 // issuer not matching, but verification errors are allowed
                 new Object[]{
@@ -233,7 +251,9 @@ public class JwtAuthSecurityRealmTest {
                         "testuser",
                         Arrays.asList("groups1"), // groups not added
                         null,
-                        true // is allowed!
+                        true, // is allowed!
+                        "email",
+                        "fullName"
                 }
         );
 
@@ -252,7 +272,9 @@ public class JwtAuthSecurityRealmTest {
             String expectedUserName,
             List<String> expectedGroupList,
             String groupListString,
-            boolean allowVerificationFailures
+            boolean allowVerificationFailures,
+            String emailClaimName,
+            String fullNameClaim
     ) {
         this.jwksUrl = jwksUrl;
         this.acceptableIssuer = acceptableIssuer;
@@ -267,6 +289,8 @@ public class JwtAuthSecurityRealmTest {
         this.expectedGroups = expectedGroupList;
         this.groupListString = groupListString;
         this.allowVerificationFailures = allowVerificationFailures;
+        this.emailClaimName = emailClaimName;
+        this.fullNameClaim = fullNameClaim;
     }
 
     @Test
@@ -281,7 +305,9 @@ public class JwtAuthSecurityRealmTest {
                 acceptableAudience,
                 jwksUrl,
                 0,
-                allowVerificationFailures
+                allowVerificationFailures,
+                emailClaimName,
+                fullNameClaim
         );
         jenkins.setSecurityRealm(realm);
 
@@ -299,6 +325,8 @@ public class JwtAuthSecurityRealmTest {
         } else {
             claims.setStringListClaim(groupClaimName, expectedGroups);
         }
+        claims.setStringClaim(emailClaimName, "test@email.com");
+        claims.setStringClaim(fullNameClaim, "Test Name");
 
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
@@ -326,5 +354,13 @@ public class JwtAuthSecurityRealmTest {
 
         Assert.assertEquals(groups.size(), authentication.getAuthorities().size());
         Assert.assertTrue(groups.containsAll(authentication.getAuthorities()));
+
+        User user = User.getById(expectedUser, false);
+        if(null != user) {
+            Assert.assertEquals("Test Name", user.getFullName());
+            Mailer.UserProperty mailerUserProperty = user.getProperty(Mailer.UserProperty.class);
+            String emailAddress = mailerUserProperty.getAddress();
+            Assert.assertEquals("test@email.com", emailAddress);
+        }
     }
 }

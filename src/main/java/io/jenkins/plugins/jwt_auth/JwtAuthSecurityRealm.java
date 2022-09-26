@@ -26,8 +26,11 @@ package io.jenkins.plugins.jwt_auth;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
+import hudson.model.User;
 import hudson.security.ChainedServletFilter;
 import hudson.security.SecurityRealm;
+import hudson.tasks.Mailer;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,6 +87,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	private final String jwksUrl;
 	private final int leewaySeconds;
 	private final boolean allowVerificationFailures;
+	private final String emailClaimName;
+	private final String fullNameClaim;
 
 	@DataBoundConstructor
 	public JwtAuthSecurityRealm(
@@ -95,7 +100,9 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 			String acceptedAudience,
 			String jwksUrl,
 			int leewaySeconds,
-			boolean allowVerificationFailures
+			boolean allowVerificationFailures,
+			String emailClaimName,
+			String fullNameClaim
 	) {
 		super();
 		this.headerName = Util.fixEmptyAndTrim(headerName);
@@ -107,6 +114,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		this.jwksUrl = Util.fixEmpty(jwksUrl);
 		this.leewaySeconds = leewaySeconds;
 		this.allowVerificationFailures = allowVerificationFailures;
+		this.emailClaimName = emailClaimName;
+		this.fullNameClaim = fullNameClaim;
 	}
 
 	/**
@@ -266,6 +275,25 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					// put it in our "cache"
 					userToGroupsCache.put(username, grantedGroups);
 
+
+
+                    User user = User.getById(username, true);
+
+					if(fullNameClaim != null) {
+						String fullName = jwtClaims.getClaimValueAsString(fullNameClaim);
+						if (fullName != null) {
+							user.setFullName(fullName);
+						}
+					}
+
+					if(emailClaimName != null) {
+						String email = jwtClaims.getClaimValueAsString(emailClaimName);
+						if (email != null) {
+							user.addProperty(new Mailer.UserProperty(email));
+						}
+					}
+					user.save();
+
 					return new JwtAuthAuthenticationToken(username, grantedGroups);
 				} catch (Throwable exception){
 					LOGGER.log(Level.SEVERE, "Could not decode the JWT", exception);
@@ -321,6 +349,12 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		}
 		public String getDefaultGroupsClaimName() {
 			return "groups";
+		}
+		public String getDefaultEmailClaimName() {
+			return "email";
+		}
+		public String getDefaultFullNameClaim() {
+			return "fullName";
 		}
 
 		public DescriptorImpl() {
