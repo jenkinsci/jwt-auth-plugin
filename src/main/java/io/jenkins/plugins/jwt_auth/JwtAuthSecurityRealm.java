@@ -354,7 +354,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 			return "email";
 		}
 		public String getDefaultFullNameClaim() {
-			return "fullName";
+			return "name";
 		}
 
 		public DescriptorImpl() {
