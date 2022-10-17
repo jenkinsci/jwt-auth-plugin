@@ -3,6 +3,31 @@
 
 name: Maven Package
 
+steps:
+- uses: s4u/maven-settings-action@v2.7.0
+  with:
+    servers: |
+      [{
+          "id": "gh",
+          "username": "$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $1}')",
+          "password": "${{ secrets.GITHUB_PACKAGES_PASSWORD }}"
+      }]
+    repositories: |
+      [
+        {
+          "id": "gh",
+          "name": "GitHub Packages",
+          "url": "https://maven.pkg.github.com/${GITHUB_REPOSITORY}",
+          "releases": {
+            "enabled": "true"
+          },
+          "snapshots": {
+            "enabled": "false"
+          }
+        }
+      ]
+
+
 on:
   push:
     branches: feature/name-and-email-claims
@@ -31,6 +56,6 @@ jobs:
       run: mvn -B package --file pom.xml
 
     - name: Publish to GitHub Packages Apache Maven
-      run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
+      run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml -DaltReleaseDeploymentRepository="gh::default::https://maven.pkg.github.com/${GITHUB_REPOSITORY}" -DaltSnapshotDeploymentRepository="gh::default::https://maven.pkg.github.com/${GITHUB_REPOSITORY}"
       env:
         GITHUB_TOKEN: ${{ github.token }}
