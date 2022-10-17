@@ -23,8 +23,8 @@ jobs:
         servers: |
           [{
               "id": "gh",
-              "username": "${{ secrets.GITHUB_PACKAGES_USERNAME }}",
-              "password": "${{ secrets.GITHUB_PACKAGES_PASSWORD }}"
+              "username": "${{ secrets.PACKAGES_USERNAME }}",
+              "password": "${{ secrets.PACKAGES_PASSWORD }}"
           }]
         repositories: |
           [
