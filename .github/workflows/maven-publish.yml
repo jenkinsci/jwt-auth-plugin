@@ -23,7 +23,7 @@ jobs:
         servers: |
           [{
               "id": "gh",
-              "username": "$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $1}')",
+              "username": "${{ secrets.GITHUB_PACKAGES_USERNAME }}",
               "password": "${{ secrets.GITHUB_PACKAGES_PASSWORD }}"
           }]
         repositories: |
