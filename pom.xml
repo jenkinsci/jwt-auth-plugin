@@ -21,7 +21,7 @@
     <jenkins.version>2.303.1</jenkins.version>
     <java.level>8</java.level>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
-    <configuration-as-code.version>1.54</configuration-as-code.version>
+    <configuration-as-code.version>1559.v38a_b_2e3b_6b_b_7</configuration-as-code.version>
   </properties>
   <name>JWT Auth Plugin</name>
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
