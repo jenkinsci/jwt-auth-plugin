@@ -183,10 +183,11 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 				JwtClaims jwtClaims = null;
 				String username = null;
-				Boolean groupsIsAList = null;
+				boolean groupsIsAList = false;
 				String groupList = null;
 				List<String> groups = null;
 				List<GrantedAuthority> grantedGroups = null;
+
 				try {
 
 					// new one 
@@ -244,11 +245,11 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					username = jwtClaims.getClaimValueAsString(userClaimName);
 
 					// get groups.. try as list first..
-					groupsIsAList = Boolean.valueOf(jwtClaims.isClaimValueStringList(groupsClaimName));
-					if (groupsIsAList.booleanValue()) {
+					groupsIsAList = jwtClaims.isClaimValueStringList(groupsClaimName);
+					if (groupsIsAList) {
 						groups = jwtClaims.getStringListClaimValue(groupsClaimName);
 					} else {
-						String groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
+						groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
 						groups = Arrays.asList(StringUtils.split(groupList, groupsClaimSeparator));
 					}
 
@@ -279,10 +280,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					if (username != null) {
 						msg.append("\nusername (").append(userClaimName).append(") = '").append(username).append("'");
 					}
-					if (groupsIsAList != null) {
-						msg.append("\ngroupsIsAList = ").append(groupsIsAList);
-						msg.append("\ngroupsClaimSeparator = '").append(groupsClaimSeparator).append("'");
-					}
+					msg.append("\ngroupsIsAList = ").append(groupsIsAList);
+					msg.append("\ngroupsClaimSeparator = '").append(groupsClaimSeparator).append("'");
 					if (groupList != null) {
 						msg.append("\ngroupsListAsString (").append(groupsClaimName).append(") = '").append(groupList).append("'");
 					}
