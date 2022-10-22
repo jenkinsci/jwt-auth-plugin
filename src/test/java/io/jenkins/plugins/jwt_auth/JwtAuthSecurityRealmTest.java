@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.List;
 
 import hudson.security.SecurityRealm;
+import hudson.Util;
 import hudson.model.User;
 import hudson.tasks.Mailer;
 import jenkins.model.Jenkins;
@@ -111,6 +112,24 @@ public class JwtAuthSecurityRealmTest {
         );
 
         return Arrays.asList(
+                // normal use case without email or fullName
+                new Object[]{
+                    "http://localhost:9191/.well-known/jwks.json",
+                    "",
+                    "",
+                    "Authorization",
+                    "username",
+                    "groups",
+                    "",
+                    rsaJwk,
+                    "testuser",
+                    "testuser",
+                    Arrays.asList("hans"),
+                    null,
+                    false,
+                    "",
+                    ""
+                },
                 // normal use case with rsa key
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
@@ -179,7 +198,9 @@ public class JwtAuthSecurityRealmTest {
                         "testuser",
                         Arrays.asList("group1", "group2", "group3"),
                         "[group1, group2, group3]",
-                        false
+                        false,
+                        "email",
+                        "fullName"
                 },
                 // no jwks defined in the realm
                 new Object[]{
@@ -341,8 +362,13 @@ public class JwtAuthSecurityRealmTest {
         } else {
             claims.setStringListClaim(groupClaimName, expectedGroups);
         }
-        claims.setStringClaim(emailClaimName, "test@email.com");
-        claims.setStringClaim(fullNameClaim, "Test Name");
+
+        if(emailClaimName != null) {
+            claims.setStringClaim(emailClaimName, "test@email.com");
+        }
+        if(fullNameClaim != null) {
+            claims.setStringClaim(fullNameClaim, "Test Name");
+        }
 
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
@@ -373,10 +399,14 @@ public class JwtAuthSecurityRealmTest {
 
         User user = User.getById(expectedUser, false);
         if(null != user) {
-            Assert.assertEquals("Test Name", user.getFullName());
-            Mailer.UserProperty mailerUserProperty = user.getProperty(Mailer.UserProperty.class);
-            String emailAddress = mailerUserProperty.getAddress();
-            Assert.assertEquals("test@email.com", emailAddress);
+            if(null != Util.fixEmptyAndTrim(fullNameClaim)) {
+                Assert.assertEquals("Test Name", user.getFullName());
+            }
+            if(null != Util.fixEmptyAndTrim(emailClaimName)) {
+                Mailer.UserProperty mailerUserProperty = user.getProperty(Mailer.UserProperty.class);
+                String emailAddress = mailerUserProperty.getAddress();
+                Assert.assertEquals("test@email.com", emailAddress);
+            }
         }
     }
 }

@@ -116,6 +116,7 @@
       <groupId>org.jenkins-ci.main</groupId>
       <artifactId>jenkins-test-harness</artifactId>
       <version>1589.vc23fca066d5c</version>
+      <scope>test</scope>
     </dependency>
     <!-- end own test deps -->
 

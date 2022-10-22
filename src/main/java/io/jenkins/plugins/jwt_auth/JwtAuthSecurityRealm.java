@@ -114,8 +114,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		this.jwksUrl = Util.fixEmpty(jwksUrl);
 		this.leewaySeconds = leewaySeconds;
 		this.allowVerificationFailures = allowVerificationFailures;
-		this.emailClaimName = emailClaimName;
-		this.fullNameClaim = fullNameClaim;
+		this.emailClaimName = Util.fixEmptyAndTrim(emailClaimName);
+		this.fullNameClaim = Util.fixEmptyAndTrim(fullNameClaim);
 	}
 
 	/**
@@ -280,24 +280,31 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					// put it in our "cache"
 					userToGroupsCache.put(username, grantedGroups);
 
-
-
-                    User user = User.getById(username, true);
-
-					if(fullNameClaim != null) {
-						String fullName = jwtClaims.getClaimValueAsString(fullNameClaim);
-						if (fullName != null) {
-							user.setFullName(fullName);
+					if(null != fullNameClaim || null != emailClaimName) {
+						boolean updateUser = false;
+						User user = User.getById(username, true);
+	
+						if(fullNameClaim != null) {
+							String fullName = jwtClaims.getClaimValueAsString(fullNameClaim);
+							if (fullName != null && !user.getFullName().equals(fullName)) {
+								user.setFullName(fullName);
+								updateUser = true;
+							}
+						}
+	
+						if(emailClaimName != null) {
+							String email = jwtClaims.getClaimValueAsString(emailClaimName);
+							if (email != null) {
+								if(!user.getProperty(Mailer.UserProperty.class).equals(email)) {
+									user.addProperty(new Mailer.UserProperty(email));
+									updateUser = true;
+								}
+							}
+						}
+						if(updateUser) {
+							user.save();
 						}
 					}
-
-					if(emailClaimName != null) {
-						String email = jwtClaims.getClaimValueAsString(emailClaimName);
-						if (email != null) {
-							user.addProperty(new Mailer.UserProperty(email));
-						}
-					}
-					user.save();
 
 					return new JwtAuthAuthenticationToken(username, grantedGroups);
 				} catch (Throwable exception){
@@ -379,10 +386,10 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 			return "groups";
 		}
 		public String getDefaultEmailClaimName() {
-			return "email";
+			return "";
 		}
 		public String getDefaultFullNameClaim() {
-			return "name";
+			return "";
 		}
 
 		public DescriptorImpl() {
@@ -434,5 +441,13 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	public boolean isAllowVerificationFailures() {
 		return allowVerificationFailures;
+	}
+
+	public String getEmailClaimName() {
+		return emailClaimName;
+	}
+
+	public String getFullNameClaim() {
+		return fullNameClaim;
 	}
 }
