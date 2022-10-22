@@ -295,7 +295,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						if(emailClaimName != null) {
 							String email = jwtClaims.getClaimValueAsString(emailClaimName);
 							if (email != null) {
-								if(!user.getProperty(Mailer.UserProperty.class).equals(email)) {
+								if(!user.getProperty(Mailer.UserProperty.class).getAddress().equals(email)) {
 									user.addProperty(new Mailer.UserProperty(email));
 									updateUser = true;
 								}
