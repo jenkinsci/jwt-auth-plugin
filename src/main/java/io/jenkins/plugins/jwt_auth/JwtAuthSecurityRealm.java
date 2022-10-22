@@ -190,6 +190,13 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						.replace("bearer", "")
 						.trim();
 
+				JwtClaims jwtClaims = null;
+				String username = null;
+				boolean groupsIsAList = false;
+				String groupList = null;
+				List<String> groups = null;
+				List<GrantedAuthority> grantedGroups = null;
+
 				try {
 
 					// new one 
@@ -225,7 +232,6 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					}
 
 					JwtConsumer jwtConsumer = jwtConsumerBuilder.build();
-					JwtClaims jwtClaims;
 
 					try {
 						jwtClaims = jwtConsumer.processToClaims(headerContent);
@@ -245,16 +251,15 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					}
 
 					// get username
-					String username = jwtClaims.getClaimValueAsString(userClaimName);
+					username = jwtClaims.getClaimValueAsString(userClaimName);
 
 					// get groups.. try as list first..
-					List<String> groups;
-
-					if (jwtClaims.isClaimValueStringList(groupsClaimName)) {
+					groupsIsAList = jwtClaims.isClaimValueStringList(groupsClaimName);
+					if (groupsIsAList) {
 						groups = jwtClaims.getStringListClaimValue(groupsClaimName);
 					} else {
-						String groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
-						groups = Arrays.asList(StringUtils.splitPreserveAllTokens(groupList, groupsClaimSeparator));
+						groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
+						groups = Arrays.asList(StringUtils.split(groupList, groupsClaimSeparator));
 					}
 
 					if (groups == null) {
@@ -266,7 +271,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						groups = new ArrayList<>();
 					}
 
-					List<GrantedAuthority> grantedGroups = getGrantedGroups(groups);
+					grantedGroups = getGrantedGroups(groups);
 
 					if (userToGroupsCache == null) {
 						userToGroupsCache = new Hashtable<>();
@@ -296,7 +301,25 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 					return new JwtAuthAuthenticationToken(username, grantedGroups);
 				} catch (Throwable exception){
-					LOGGER.log(Level.SEVERE, "Could not decode the JWT", exception);
+					StringBuilder msg = new StringBuilder("Could not decode the JWT");
+					if (jwtClaims != null) {
+						msg.append("\njwtClaims = ").append(jwtClaims.toString());
+					}
+					if (username != null) {
+						msg.append("\nusername (").append(userClaimName).append(") = '").append(username).append("'");
+					}
+					msg.append("\ngroupsIsAList = ").append(groupsIsAList);
+					msg.append("\ngroupsClaimSeparator = '").append(groupsClaimSeparator).append("'");
+					if (groupList != null) {
+						msg.append("\ngroupsListAsString (").append(groupsClaimName).append(") = '").append(groupList).append("'");
+					}
+					if (groups != null) {
+						msg.append("\ngroups (").append(groupsClaimName).append(") = ").append(groups.toString());
+					}
+					if (grantedGroups != null) {
+						msg.append("\ngrantedGroups = ").append(grantedGroups.toString());
+					}
+					LOGGER.log(Level.SEVERE, msg.toString(), exception);
 					// will return anonymous again in the end
 				}
 
@@ -318,7 +341,12 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		groups.add(SecurityRealm.AUTHENTICATED_AUTHORITY2);
 
 		groupNames.forEach(group -> {
-			groups.add(new SimpleGrantedAuthority(group));
+			try {
+				GrantedAuthority ga = new SimpleGrantedAuthority(group);
+				groups.add(ga);
+			} catch (RuntimeException ex) {
+				throw new IllegalArgumentException("Unable to transform group name '" + group +"' to " + GrantedAuthority.class.getSimpleName(), ex);
+			}
 		});
 
 		return groups;
