@@ -23,14 +23,6 @@
  */
 package io.jenkins.plugins.jwt_auth;
 
-import hudson.Extension;
-import hudson.Util;
-import hudson.model.Descriptor;
-import hudson.model.User;
-import hudson.security.ChainedServletFilter;
-import hudson.security.SecurityRealm;
-import hudson.tasks.Mailer;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +30,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -45,7 +38,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import jenkins.model.Jenkins;
+
 import org.apache.commons.lang.StringUtils;
 import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwt.JwtClaims;
@@ -60,6 +53,16 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import hudson.Extension;
+import hudson.Util;
+import hudson.model.Descriptor;
+import hudson.model.User;
+import hudson.security.ChainedServletFilter;
+import hudson.security.SecurityRealm;
+import hudson.tasks.Mailer;
+import hudson.tasks.Mailer.UserProperty;
+import jenkins.model.Jenkins;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -295,7 +298,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						if(emailClaimName != null) {
 							String email = jwtClaims.getClaimValueAsString(emailClaimName);
 							if (email != null) {
-								if(!user.getProperty(Mailer.UserProperty.class).getAddress().equals(email)) {
+								UserProperty mailerUserProperty = user.getProperty(Mailer.UserProperty.class);
+								if(!email.equals(mailerUserProperty.getAddress())) {
 									user.addProperty(new Mailer.UserProperty(email));
 									updateUser = true;
 								}
