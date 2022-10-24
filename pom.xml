@@ -9,7 +9,7 @@
   </parent>
   <groupId>io.jenkins.plugins</groupId>
   <artifactId>jwt-auth</artifactId>
-  <version>0.3.0</version>
+  <version>0.4.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <properties>
     <revision>0.1.0</revision>
@@ -156,7 +156,7 @@
     <connection>scm:git:git://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
     <url>https://github.com/${gitHubRepo}</url>
-    <tag>jwt-auth-0.3.0</tag>
+    <tag>${scmTag}</tag>
   </scm>
 
   <repositories>
