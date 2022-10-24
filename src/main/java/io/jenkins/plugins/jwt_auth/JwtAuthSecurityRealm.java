@@ -23,11 +23,6 @@
  */
 package io.jenkins.plugins.jwt_auth;
 
-import hudson.Extension;
-import hudson.Util;
-import hudson.model.Descriptor;
-import hudson.security.ChainedServletFilter;
-import hudson.security.SecurityRealm;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +30,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -42,7 +38,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import jenkins.model.Jenkins;
+
 import org.apache.commons.lang.StringUtils;
 import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwt.JwtClaims;
@@ -57,6 +53,16 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import hudson.Extension;
+import hudson.Util;
+import hudson.model.Descriptor;
+import hudson.model.User;
+import hudson.security.ChainedServletFilter;
+import hudson.security.SecurityRealm;
+import hudson.tasks.Mailer;
+import hudson.tasks.Mailer.UserProperty;
+import jenkins.model.Jenkins;
 
 /**
  * @author Kohsuke Kawaguchi
@@ -84,6 +90,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	private final String jwksUrl;
 	private final int leewaySeconds;
 	private final boolean allowVerificationFailures;
+	private final String emailClaimName;
+	private final String fullNameClaim;
 
 	@DataBoundConstructor
 	public JwtAuthSecurityRealm(
@@ -95,7 +103,9 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 			String acceptedAudience,
 			String jwksUrl,
 			int leewaySeconds,
-			boolean allowVerificationFailures
+			boolean allowVerificationFailures,
+			String emailClaimName,
+			String fullNameClaim
 	) {
 		super();
 		this.headerName = Util.fixEmptyAndTrim(headerName);
@@ -107,6 +117,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		this.jwksUrl = Util.fixEmpty(jwksUrl);
 		this.leewaySeconds = leewaySeconds;
 		this.allowVerificationFailures = allowVerificationFailures;
+		this.emailClaimName = Util.fixEmptyAndTrim(emailClaimName);
+		this.fullNameClaim = Util.fixEmptyAndTrim(fullNameClaim);
 	}
 
 	/**
@@ -271,6 +283,33 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					// put it in our "cache"
 					userToGroupsCache.put(username, grantedGroups);
 
+					if(null != fullNameClaim || null != emailClaimName) {
+						boolean updateUser = false;
+						User user = User.getById(username, true);
+	
+						if(fullNameClaim != null) {
+							String fullName = jwtClaims.getClaimValueAsString(fullNameClaim);
+							if (fullName != null && !user.getFullName().equals(fullName)) {
+								user.setFullName(fullName);
+								updateUser = true;
+							}
+						}
+	
+						if(emailClaimName != null) {
+							String email = jwtClaims.getClaimValueAsString(emailClaimName);
+							if (email != null) {
+								UserProperty mailerUserProperty = user.getProperty(Mailer.UserProperty.class);
+								if(!email.equals(mailerUserProperty.getAddress())) {
+									user.addProperty(new Mailer.UserProperty(email));
+									updateUser = true;
+								}
+							}
+						}
+						if(updateUser) {
+							user.save();
+						}
+					}
+
 					return new JwtAuthAuthenticationToken(username, grantedGroups);
 				} catch (Throwable exception){
 					StringBuilder msg = new StringBuilder("Could not decode the JWT");
@@ -350,6 +389,12 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		public String getDefaultGroupsClaimName() {
 			return "groups";
 		}
+		public String getDefaultEmailClaimName() {
+			return "";
+		}
+		public String getDefaultFullNameClaim() {
+			return "";
+		}
 
 		public DescriptorImpl() {
 			super();
@@ -400,5 +445,13 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	public boolean isAllowVerificationFailures() {
 		return allowVerificationFailures;
+	}
+
+	public String getEmailClaimName() {
+		return emailClaimName;
+	}
+
+	public String getFullNameClaim() {
+		return fullNameClaim;
 	}
 }

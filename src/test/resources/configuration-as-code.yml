@@ -10,3 +10,5 @@ jenkins:
       jwksUrl: http://jwks-host/.well-known/openid
       leewaySeconds: 3
       allowVerificationFailures: true
+      emailClaimName: email
+      fullNameClaim: name

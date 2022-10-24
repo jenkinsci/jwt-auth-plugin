@@ -57,5 +57,14 @@ public class ConfigurationAsCodeTest {
         jwtAuthSecurityRealm.getLeewaySeconds()
     );
     assertTrue(jwtAuthSecurityRealm.isAllowVerificationFailures());
+    assertEquals(
+        "email",
+        jwtAuthSecurityRealm.getEmailClaimName()
+    );
+    assertEquals(
+        "name",
+        jwtAuthSecurityRealm.getFullNameClaim()
+    );
+
   }
 }
