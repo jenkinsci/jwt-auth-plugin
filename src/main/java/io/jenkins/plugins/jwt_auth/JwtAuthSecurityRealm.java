@@ -64,9 +64,6 @@ import hudson.tasks.Mailer;
 import hudson.tasks.Mailer.UserProperty;
 import jenkins.model.Jenkins;
 
-/**
- * @author Kohsuke Kawaguchi
- */
 public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	private static final Logger LOGGER = Logger.getLogger(JwtAuthSecurityRealm.class.getName());
