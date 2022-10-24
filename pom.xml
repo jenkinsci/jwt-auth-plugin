@@ -21,6 +21,7 @@
     <jenkins.version>2.332.4</jenkins.version>
 
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
+    <configuration-as-code.version>1.55.1</configuration-as-code.version>
   </properties>
   <name>JWT Auth Plugin</name>
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
@@ -42,22 +43,22 @@
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>structs</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>mailer</artifactId>
+    </dependency>
 
     <!-- our own deps -->
     <dependency>
       <groupId>org.bitbucket.b_c</groupId>
       <artifactId>jose4j</artifactId>
-      <version>0.9.0</version>
+      <version>0.9.1</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>mailer</artifactId>
     </dependency>
     <!-- end our own deps -->
 
