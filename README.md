@@ -43,7 +43,7 @@ Read through all configuration parameters, they are all documented.
 
 This plugin aims to support [Jenkins CasC (JCasC)](https://github.com/jenkinsci/configuration-as-code-plugin).
 
-If you want to configure the SecurityRealm via CasC; [check the example configuration in our tests](https://github.com/jenkinsci/jwt-auth-plugin/blob/develop/src/test/resources/configuration-as-code.yml). 
+If you want to configure the SecurityRealm via CasC; [check the example configuration in our tests](https://github.com/jenkinsci/jwt-auth-plugin/blob/develop/src/test/resources/configuration-as-code.yml).
 
 ## Issues
 
@@ -52,6 +52,15 @@ Report issues and enhancements in the [Github issue tracker](https://github.com/
 ## Contributing
 
 Refer to our [contribution guidelines](https://github.com/jenkinsci/.github/blob/master/CONTRIBUTING.md)
+
+### Developer notes
+
+Keeping up to date with parent:
+
+* Confirm that you are using the [current parent](https://www.jenkins.io/doc/developer/plugin-development/updating-parent/) pom with the command mvn versions:update-parent
+* Locate the most recent plugin bom version number on the plugin bom releases page
+* Copy the dependencyManagement section from the pom.xml file in that directory
+* Insert this dependencyManagement section into the pom.xml file for your plugin
 
 ## LICENSE
 
