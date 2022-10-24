@@ -62,6 +62,10 @@ Keeping up to date with parent:
 * Copy the dependencyManagement section from the pom.xml file in that directory
 * Insert this dependencyManagement section into the pom.xml file for your plugin
 
+Releasing
+
+* Label all PRs for [release drafter](https://github.com/jenkinsci/.github/blob/master/.github/release-drafter.adoc) 
+
 ## LICENSE
 
 Licensed under MIT, see [LICENSE](LICENSE.md)
