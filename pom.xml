@@ -19,7 +19,7 @@
     <jenkins.version>2.332.4</jenkins.version>
 
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
-    <configuration-as-code.version>1.55.1</configuration-as-code.version>
+    <configuration-as-code.version>1569.vb_72405b_80249</configuration-as-code.version>
   </properties>
   <name>JWT Auth Plugin</name>
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
