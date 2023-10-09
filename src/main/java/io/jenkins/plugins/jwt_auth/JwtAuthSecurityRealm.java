@@ -26,8 +26,10 @@ package io.jenkins.plugins.jwt_auth;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,6 +41,8 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
+import hudson.util.Scrambler;
+import jenkins.security.ApiTokenProperty;
 import org.apache.commons.lang.StringUtils;
 import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwt.JwtClaims;
@@ -47,6 +51,8 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -166,10 +172,35 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					FilterChain filterChain) throws IOException, ServletException {
 
 				SecurityContextHolder.getContext().setAuthentication(
-						getAuthFromToken(servletRequest)
+						Optional.ofNullable(getAuthFromApiToken(servletRequest))
+								.orElseGet(() -> getAuthFromToken(servletRequest))
 				);
 
 				filterChain.doFilter(servletRequest, servletResponse);
+			}
+
+			private Authentication getAuthFromApiToken(ServletRequest servletRequest) {
+				HttpServletRequest request = (HttpServletRequest) servletRequest;
+				String authorization;
+				if ((authorization = request.getHeader("Authorization")) != null && authorization.toLowerCase().startsWith("basic ")) {
+					String uidpassword = Scrambler.descramble(authorization.substring(6));
+					int idx = uidpassword.indexOf(':');
+					if (idx >= 0) {
+						String username = uidpassword.substring(0, idx);
+						String password = uidpassword.substring(idx+1);
+
+						// attempt to authenticate as API token
+						User u = User.getById(username, false);
+						if (u != null) {
+							ApiTokenProperty t = u.getProperty(ApiTokenProperty.class);
+							if (t != null && t.matchesPassword(password)) {
+								return new UsernamePasswordAuthenticationToken(username, "",
+										Collections.singleton(AUTHENTICATED_AUTHORITY2));
+							}
+						}
+					}
+				}
+				return null;
 			}
 
 			private Authentication getAuthFromToken(ServletRequest servletRequest) {
