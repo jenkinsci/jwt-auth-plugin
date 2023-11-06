@@ -24,33 +24,48 @@
 
 package io.jenkins.plugins.jwt_auth;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import hudson.security.SecurityRealm;
-import hudson.Util;
-import hudson.model.User;
-import hudson.tasks.Mailer;
-import jenkins.model.Jenkins;
-import org.jose4j.jwk.*;
+import org.jose4j.jwk.EcJwkGenerator;
+import org.jose4j.jwk.EllipticCurveJsonWebKey;
+import org.jose4j.jwk.JsonWebKey;
+import org.jose4j.jwk.JsonWebKeySet;
+import org.jose4j.jwk.PublicJsonWebKey;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.keys.EllipticCurves;
 import org.jose4j.lang.JoseException;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+
+import hudson.Util;
+import hudson.model.User;
+import hudson.security.SecurityRealm;
+import hudson.tasks.Mailer;
+import jenkins.model.Jenkins;
 
 @RunWith(Parameterized.class)
 public class JwtAuthSecurityRealmTest {
@@ -68,6 +83,7 @@ public class JwtAuthSecurityRealmTest {
 
     /* test params */
     private String jwksUrl;
+    private String jwksFile;
     private String acceptableIssuer;
     private String acceptableAudience;
     private String headerName;
@@ -89,7 +105,7 @@ public class JwtAuthSecurityRealmTest {
     }
 
     @Parameterized.Parameters
-    public static Collection<Object[]> data() throws JoseException {
+    public static Collection<Object[]> data() throws JoseException, IOException {
         rsaJwk = RsaJwkGenerator.generateJwk(2048);
         rsaJwk.setAlgorithm(AlgorithmIdentifiers.RSA_USING_SHA256);
         rsaJwk.setKeyId("id1");
@@ -111,10 +127,13 @@ public class JwtAuthSecurityRealmTest {
                         )
         );
 
+        Files.write(Paths.get("jwks.json"), jwksJson.getBytes("UTF-8"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+
         return Arrays.asList(
                 // normal use case without email or fullName
                 new Object[]{
                     "http://localhost:9191/.well-known/jwks.json",
+                    null,
                     "",
                     "",
                     "Authorization",
@@ -133,6 +152,7 @@ public class JwtAuthSecurityRealmTest {
                 // normal use case with rsa key
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
+                        null,
                         "",
                         "",
                         "Authorization",
@@ -151,6 +171,7 @@ public class JwtAuthSecurityRealmTest {
                 // normal use case with ec key
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
+                        null,
                         "",
                         "",
                         "custom-header-name",
@@ -169,6 +190,7 @@ public class JwtAuthSecurityRealmTest {
                 // ec key, group list as string with separator
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
+                        null,
                         "",
                         "",
                         "other-header-NAME",
@@ -187,6 +209,7 @@ public class JwtAuthSecurityRealmTest {
                 // Azure passes groups as [group1, group2, group3]
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
+                        null,
                         "",
                         "",
                         "other-header-NAME",
@@ -202,9 +225,29 @@ public class JwtAuthSecurityRealmTest {
                         "email",
                         "fullName"
                 },
+                // file use case without email or fullName
+                new Object[]{
+                    null,
+                    "jwks.json",
+                    "",
+                    "",
+                    "Authorization",
+                    "username",
+                    "groups",
+                    "",
+                    rsaJwk,
+                    "testuser",
+                    "testuser",
+                    Arrays.asList("hans"),
+                    null,
+                    false,
+                    "",
+                    ""
+                },
                 // no jwks defined in the realm
                 new Object[]{
                         "",
+                        null,
                         "",
                         "",
                         "other-header-NAME",
@@ -223,6 +266,7 @@ public class JwtAuthSecurityRealmTest {
                 // audience and issuer matching
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
+                        null,
                         "issuer1,test",
                         "audience1,testaudience",
                         "other-header-NAME",
@@ -241,6 +285,7 @@ public class JwtAuthSecurityRealmTest {
                 // audience not matching -> anonymous
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
+                        null,
                         "issuer1,test",
                         "audience1",
                         "other-header-NAME",
@@ -259,6 +304,7 @@ public class JwtAuthSecurityRealmTest {
                 // issuer not matching
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
+                        null,
                         "issuer1",
                         "audience1,testaudience",
                         "other-header-NAME",
@@ -277,6 +323,7 @@ public class JwtAuthSecurityRealmTest {
                 // issuer not matching, but verification errors are allowed
                 new Object[]{
                         "http://localhost:9191/.well-known/jwks.json",
+                        null,
                         "issuer1",
                         "audience1,testaudience",
                         "other-header-NAME",
@@ -298,6 +345,7 @@ public class JwtAuthSecurityRealmTest {
 
     public JwtAuthSecurityRealmTest(
             String jwksUrl,
+            String jwksFile,
             String acceptableIssuer,
             String acceptableAudience,
             String headerName,
@@ -314,6 +362,7 @@ public class JwtAuthSecurityRealmTest {
             String fullNameClaim
     ) {
         this.jwksUrl = jwksUrl;
+        this.jwksFile = jwksFile;
         this.acceptableIssuer = acceptableIssuer;
         this.acceptableAudience = acceptableAudience;
         this.headerName = headerName;
@@ -346,6 +395,11 @@ public class JwtAuthSecurityRealmTest {
                 emailClaimName,
                 fullNameClaim
         );
+
+        if (jwksFile != null) {
+        	realm.setJwksFile(jwksFile);
+        }
+
         jenkins.setSecurityRealm(realm);
 
         JwtClaims claims = new JwtClaims();

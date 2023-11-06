@@ -24,6 +24,8 @@
 package io.jenkins.plugins.jwt_auth;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -41,10 +43,13 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringUtils;
 import org.jose4j.jwk.HttpsJwks;
+import org.jose4j.jwk.JsonWebKeySet;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver;
+import org.jose4j.keys.resolvers.JwksVerificationKeyResolver;
+import org.jose4j.keys.resolvers.VerificationKeyResolver;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
@@ -76,7 +81,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	/**
 	 * jwks resolver
 	 */
-	public transient HttpsJwksVerificationKeyResolver jwksResolver;
+	public transient VerificationKeyResolver jwksResolver;
 
 	private final String headerName;
 	private final String userClaimName;
@@ -85,6 +90,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	private final String acceptedIssuer;
 	private final String acceptedAudience;
 	private final String jwksUrl;
+	private String jwksFile;
 	private final int leewaySeconds;
 	private final boolean allowVerificationFailures;
 	private final String emailClaimName;
@@ -112,6 +118,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		this.acceptedIssuer = Util.fixEmptyAndTrim(acceptedIssuer);
 		this.acceptedAudience = Util.fixEmptyAndTrim(acceptedAudience);
 		this.jwksUrl = Util.fixEmpty(jwksUrl);
+		this.jwksFile = Util.fixEmptyAndTrim(System.getenv("JENKINS_JWT_AUTH_JWKSFILE"));
 		this.leewaySeconds = leewaySeconds;
 		this.allowVerificationFailures = allowVerificationFailures;
 		this.emailClaimName = Util.fixEmptyAndTrim(emailClaimName);
@@ -208,6 +215,14 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 					if (jwksUrl != null && !jwksUrl.isEmpty() && jwksResolver == null) {
 						jwksResolver = new HttpsJwksVerificationKeyResolver(
 								new HttpsJwks(jwksUrl)
+						);
+					}
+
+					else if (jwksFile != null && !jwksFile.isEmpty() && jwksResolver == null) {
+						JsonWebKeySet jsonWebKeySet = new JsonWebKeySet(
+								new String(Files.readAllBytes(Paths.get(jwksFile)), "UTF-8"));
+						jwksResolver = new JwksVerificationKeyResolver(
+								jsonWebKeySet.getJsonWebKeys()
 						);
 					}
 
@@ -450,5 +465,9 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	public String getFullNameClaim() {
 		return fullNameClaim;
+	}
+	
+	protected void setJwksFile(String jwksFile) {
+		this.jwksFile = jwksFile;
 	}
 }
