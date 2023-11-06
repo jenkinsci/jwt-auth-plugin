@@ -7,8 +7,13 @@
   </p>
 
   <p>
-    Please be aware that if you <strong>don't</strong> provide a JWKS URL, no signature verification will be performed.
-    This is useful for use cases that use JWT but don't sign them.
+    If left unset, and the environment variable <code>JENKINS_JWT_AUTH_JWKSFILE</code> is set to a valid file path, the
+    signing keys will be read from this file.
+  </p> 
+
+  <p>
+    Please be aware that if you <strong>don't</strong> provide a JWKS URL, and you <strong>don't</strong> provide a JWKS file,
+    no signature verification will be performed. This is useful for use cases that use JWT but don't sign them.
   </p>
 
   <p>

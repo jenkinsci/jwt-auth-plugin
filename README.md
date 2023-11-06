@@ -18,6 +18,7 @@ The plugin allows to
 * It have a "bearer " prefix or not, both is accepted
 * The mapping of username and group list to the claims can be customized (you can choose which claims to read)
 * Define a JWKS URL to verify the token. JWKS allows key rotation as needed.
+* Optional fallback to a JWKS file specified by the `JENKINS_JWT_AUTH_JWKSFILE` environment variable.
 
 Currently, JWKS is the only way to verify a token.
 
