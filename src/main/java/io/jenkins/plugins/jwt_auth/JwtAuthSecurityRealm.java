@@ -259,7 +259,9 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						groups = jwtClaims.getStringListClaimValue(groupsClaimName);
 					} else {
 						groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
-						groups = Arrays.asList(StringUtils.split(groupList, groupsClaimSeparator));
+						if (groupList != null) {
+							groups = Arrays.asList(StringUtils.split(groupList, groupsClaimSeparator));
+						}
 					}
 
 					if (groups == null) {

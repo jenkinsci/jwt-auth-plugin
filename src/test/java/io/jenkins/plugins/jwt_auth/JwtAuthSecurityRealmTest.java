@@ -291,6 +291,24 @@ public class JwtAuthSecurityRealmTest {
                         true, // is allowed!
                         "email",
                         "fullName"
+                },
+                // groups claim does not exist
+                new Object[]{
+                        "http://localhost:9191/.well-known/jwks.json",
+                        "issuer1,test",
+                        "audience1,testaudience",
+                        "other-header-NAME",
+                        "username",
+                        "groupsNotExist",
+                        "",
+                        ecJwk,
+                        "testuser",
+                        "testuser",
+                        null,
+                        null,
+                        false,
+                        "email",
+                        "fullName"
                 }
         );
 
@@ -388,6 +406,10 @@ public class JwtAuthSecurityRealmTest {
             groups.addAll(Jenkins.ANONYMOUS2.getAuthorities());
         } else {
             groups.add(SecurityRealm.AUTHENTICATED_AUTHORITY2);
+        }
+
+        if (expectedGroups == null) {
+        	expectedGroups = Arrays.asList();
         }
 
         for (String groupName : expectedGroups) {
