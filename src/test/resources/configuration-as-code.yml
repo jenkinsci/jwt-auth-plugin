@@ -12,3 +12,4 @@ jenkins:
       allowVerificationFailures: true
       emailClaimName: email
       fullNameClaim: name
+      loginUrl: http://jwks-host/login

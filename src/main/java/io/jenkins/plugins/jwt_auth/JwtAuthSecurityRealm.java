@@ -89,6 +89,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	private final boolean allowVerificationFailures;
 	private final String emailClaimName;
 	private final String fullNameClaim;
+        private final String loginUrl;
 
 	@DataBoundConstructor
 	public JwtAuthSecurityRealm(
@@ -102,7 +103,8 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 			int leewaySeconds,
 			boolean allowVerificationFailures,
 			String emailClaimName,
-			String fullNameClaim
+			String fullNameClaim,
+                        String loginUrl
 	) {
 		super();
 		this.headerName = Util.fixEmptyAndTrim(headerName);
@@ -116,6 +118,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		this.allowVerificationFailures = allowVerificationFailures;
 		this.emailClaimName = Util.fixEmptyAndTrim(emailClaimName);
 		this.fullNameClaim = Util.fixEmptyAndTrim(fullNameClaim);
+		this.loginUrl = Util.fixEmpty(loginUrl);
 	}
 
 	/**
@@ -450,5 +453,9 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 
 	public String getFullNameClaim() {
 		return fullNameClaim;
+	}
+
+	public String getLoginUrl() {
+		return loginUrl;
 	}
 }
