@@ -65,6 +65,9 @@ public class ConfigurationAsCodeTest {
         "name",
         jwtAuthSecurityRealm.getFullNameClaim()
     );
-
+    assertEquals(
+        "http://jwks-host/login",
+        jwtAuthSecurityRealm.getLoginUrl()
+    );
   }
 }

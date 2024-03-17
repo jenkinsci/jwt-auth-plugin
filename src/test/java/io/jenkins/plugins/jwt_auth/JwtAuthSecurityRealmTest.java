@@ -82,6 +82,7 @@ public class JwtAuthSecurityRealmTest {
     private String groupListString;
     private String emailClaimName;
     private String fullNameClaim;
+    private String loginUrl;
 
     @Before
     public void prepare() {
@@ -128,7 +129,8 @@ public class JwtAuthSecurityRealmTest {
                     null,
                     false,
                     "",
-                    ""
+                    "",
+                    "login"
                 },
                 // normal use case with rsa key
                 new Object[]{
@@ -146,7 +148,8 @@ public class JwtAuthSecurityRealmTest {
                         null,
                         false,
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 },
                 // normal use case with ec key
                 new Object[]{
@@ -164,7 +167,8 @@ public class JwtAuthSecurityRealmTest {
                         null,
                         false,
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 },
                 // ec key, group list as string with separator
                 new Object[]{
@@ -182,7 +186,8 @@ public class JwtAuthSecurityRealmTest {
                         "group1|group2|group3",
                         false,
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 },
                 // Azure passes groups as [group1, group2, group3]
                 new Object[]{
@@ -200,7 +205,8 @@ public class JwtAuthSecurityRealmTest {
                         "[group1, group2, group3]",
                         false,
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 },
                 // no jwks defined in the realm
                 new Object[]{
@@ -218,7 +224,8 @@ public class JwtAuthSecurityRealmTest {
                         null,
                         false,
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 },
                 // audience and issuer matching
                 new Object[]{
@@ -236,7 +243,8 @@ public class JwtAuthSecurityRealmTest {
                         null,
                         false,
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 },
                 // audience not matching -> anonymous
                 new Object[]{
@@ -254,7 +262,8 @@ public class JwtAuthSecurityRealmTest {
                         null,
                         false,
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 },
                 // issuer not matching
                 new Object[]{
@@ -272,7 +281,8 @@ public class JwtAuthSecurityRealmTest {
                         null,
                         false,
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 },
                 // issuer not matching, but verification errors are allowed
                 new Object[]{
@@ -290,7 +300,8 @@ public class JwtAuthSecurityRealmTest {
                         null,
                         true, // is allowed!
                         "email",
-                        "fullName"
+                        "fullName",
+                        "login"
                 }
         );
 
@@ -311,7 +322,8 @@ public class JwtAuthSecurityRealmTest {
             String groupListString,
             boolean allowVerificationFailures,
             String emailClaimName,
-            String fullNameClaim
+            String fullNameClaim,
+            String loginUrl
     ) {
         this.jwksUrl = jwksUrl;
         this.acceptableIssuer = acceptableIssuer;
@@ -328,6 +340,7 @@ public class JwtAuthSecurityRealmTest {
         this.allowVerificationFailures = allowVerificationFailures;
         this.emailClaimName = emailClaimName;
         this.fullNameClaim = fullNameClaim;
+        this.loginUrl = loginUrl;
     }
 
     @Test
@@ -344,7 +357,8 @@ public class JwtAuthSecurityRealmTest {
                 0,
                 allowVerificationFailures,
                 emailClaimName,
-                fullNameClaim
+                fullNameClaim,
+                loginUrl
         );
         jenkins.setSecurityRealm(realm);
 
