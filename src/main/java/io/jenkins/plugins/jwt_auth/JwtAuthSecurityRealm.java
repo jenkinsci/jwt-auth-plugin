@@ -259,7 +259,7 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						groups = jwtClaims.getStringListClaimValue(groupsClaimName);
 					} else {
 						groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
-						groups = Arrays.asList(StringUtils.split(groupList, groupsClaimSeparator));
+						groups = Arrays.asList(splitDiscardingEmpty(groupList, groupsClaimSeparator));
 					}
 
 					if (groups == null) {
@@ -451,4 +451,20 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	public String getFullNameClaim() {
 		return fullNameClaim;
 	}
+	/**
+	 * Splits on any character in {@code separatorChars}, discarding empty tokens -- matching Commons
+	 * Lang's {@code StringUtils.split}, which differs from {@code String.split} in both respects.
+	 */
+	private static String[] splitDiscardingEmpty(String value, String separatorChars) {
+		if (value == null) {
+			return null;
+		}
+		java.util.List<String> parts = new java.util.ArrayList<>();
+		java.util.StringTokenizer tokenizer = new java.util.StringTokenizer(value, separatorChars);
+		while (tokenizer.hasMoreTokens()) {
+			parts.add(tokenizer.nextToken());
+		}
+		return parts.toArray(new String[0]);
+	}
+
 }
