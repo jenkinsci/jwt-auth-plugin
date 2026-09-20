@@ -454,9 +454,9 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 		return fullNameClaim;
 	}
 	/**
-	 * Splits on any character in {@code separatorChars}, discarding empty tokens -- matching Commons
-	 * Lang's {@code StringUtils.split(String, String)}: a {@code null} value returns {@code null},
-	 * and a {@code null} separatorChars splits on whitespace instead of throwing.
+	 * Splits on any character in {@code separatorChars}, discarding empty tokens -- matching the
+	 * former Commons Lang 2 {@code split(String, String)} behavior: a {@code null} value returns
+	 * {@code null}, and a {@code null} separatorChars splits on whitespace instead of throwing.
 	 */
 	private static String[] splitDiscardingEmpty(String value, String separatorChars) {
 		if (value == null) {
