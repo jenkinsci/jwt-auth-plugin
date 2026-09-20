@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +40,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang.StringUtils;
 import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.JwtConsumer;
@@ -259,7 +259,9 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 						groups = jwtClaims.getStringListClaimValue(groupsClaimName);
 					} else {
 						groupList = jwtClaims.getClaimValueAsString(groupsClaimName);
-						groups = Arrays.asList(StringUtils.split(groupList, groupsClaimSeparator));
+						groups = groupList == null
+								? null
+								: Arrays.asList(splitDiscardingEmpty(groupList, groupsClaimSeparator));
 					}
 
 					if (groups == null) {
@@ -451,4 +453,23 @@ public class JwtAuthSecurityRealm extends SecurityRealm {
 	public String getFullNameClaim() {
 		return fullNameClaim;
 	}
+	/**
+	 * Splits on any character in {@code separatorChars}, discarding empty tokens -- matching the
+	 * former Commons Lang 2 {@code split(String, String)} behavior: a {@code null} value returns
+	 * {@code null}, and a {@code null} separatorChars splits on whitespace instead of throwing.
+	 */
+	private static String[] splitDiscardingEmpty(String value, String separatorChars) {
+		if (value == null) {
+			return null;
+		}
+		List<String> parts = new ArrayList<>();
+		StringTokenizer tokenizer = separatorChars == null
+				? new StringTokenizer(value)
+				: new StringTokenizer(value, separatorChars);
+		while (tokenizer.hasMoreTokens()) {
+			parts.add(tokenizer.nextToken());
+		}
+		return parts.toArray(new String[0]);
+	}
+
 }
